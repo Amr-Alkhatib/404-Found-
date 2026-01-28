@@ -18,10 +18,9 @@ public class GameScreen implements Screen {
     private boolean waitingForNextLevel = false;
     private float waitTimer = 0f;
     private static final float WAIT_BEFORE_NEXT_LEVEL = 2.0f; // 等待时长（秒）
-    private final String originalMapLevel; // 新增：存储原始 mapLevel
-    // ====================================
+    private final String originalMapLevel;
 
-    // ... (other members remain unchanged) ...
+
     private final MazeRunnerGame game;
     private final OrthographicCamera camera;
     private final String mapLevel;
@@ -42,28 +41,20 @@ public class GameScreen implements Screen {
     private Sound winScreenMusic;
     private Sound loseScreenMusic;
     private GameManager gameManager;
-    private boolean isGameOver = false;
     private Texture endScreenTexture;
-
-    // === NEW: Added flag for showing end screen and waiting for input ===
     private boolean showingEndScreen = false;
-    private String endScreenImagePath = null; // Store the path of the image to show
-    // ====================================
 
 
-    // In the constructor, store the original map level
     public GameScreen(MazeRunnerGame game, String mapLevel, boolean ignoreSavedState, String mapLevel1) {
         this.game = game;
-        this.originalMapLevel = mapLevel; // Store the original level identifier (e.g., "INFINITE_MODE")
-        this.mapLevel = mapLevel1; // Store the actual map file path
+        this.originalMapLevel = mapLevel;
+        this.mapLevel = mapLevel1;
         camera = new OrthographicCamera();
         camera.setToOrtho(false);
 
-        // --- 地图加载 ---
+
         String actualMapFile;
         if ("INFINITE_MODE".equals(this.originalMapLevel)) {
-            // Use originalMapLevel to check
-            // 如果是无限模式，生成第一张地图
             actualMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 15, 5, 3, 2); // 可调整大小和数量
             System.out.println("Infinite Mode: Generated initial map: " + actualMapFile);
         } else {
@@ -71,7 +62,7 @@ public class GameScreen implements Screen {
         }
         gameMap = new GameMap(actualMapFile);
 
-        // --- 获取按键设置 ---
+
         var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
         int upKey = prefs.getInteger("key_up", Input.Keys.W);
         int downKey = prefs.getInteger("key_down", Input.Keys.S);
@@ -79,7 +70,7 @@ public class GameScreen implements Screen {
         int rightKey = prefs.getInteger("key_right", Input.Keys.D);
         int sprintKey = prefs.getInteger("key_sprint", Input.Keys.SHIFT_LEFT);
 
-        // --- 获取起始坐标 ---
+
         float startX = gameMap.getPlayerStartX();
         float startY = gameMap.getPlayerStartY();
         if (startX == -1 || startY == -1) {
@@ -87,17 +78,14 @@ public class GameScreen implements Screen {
             startY = 0;
         }
 
-        // --- 音频设置 ---
         setupAudio();
 
-        // --- 初始化玩家 ---
         player = new GameCharacter(startX, startY, upKey, downKey, leftKey, rightKey);
         gameMap.setPlayer(player);
 
-        // --- 初始化 HUD ---
         hud = new Hud(gameMap, new ScreenViewport());
 
-        // --- 初始化 GameManager ---
+
         gameManager = new GameManager(
                 gameMap,
                 game,
@@ -114,17 +102,13 @@ public class GameScreen implements Screen {
                 gameMap.getBoosts(),
                 gameMap.getMorphTraps(),
                 gameMap.getExitArrow(),
-                sprintKey // Pass the exitArrow here
+                sprintKey
         );
-
-        // --- 相机初始设置 ---
         aspectRatio = (float) Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
         camera.setToOrtho(false);
         camera.viewportHeight = tileSize * tilesVisibleY;
         camera.viewportWidth = camera.viewportHeight * aspectRatio;
-        camera.viewportWidth = Math.min(camera.viewportWidth, (gameMap.getWidth() - 2) * tileSize);
-        camera.viewportHeight = Math.min(camera.viewportHeight, (gameMap.getHeight() - 2) * tileSize);
-        updateCamera(); // Initial centering
+        updateCamera();
     }
 
 
@@ -146,7 +130,7 @@ public class GameScreen implements Screen {
 
         if (showingEndScreen) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-                game.goToMenu(); // Geht zurück ins Hauptmenü
+                game.goToMenu();
             }
         }
 
@@ -216,13 +200,10 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        camera.setToOrtho(false);
         aspectRatio = (float) width / (float) height;
         camera.viewportHeight = tileSize * tilesVisibleY;
         camera.viewportWidth = camera.viewportHeight * aspectRatio;
-        camera.viewportWidth = Math.min(camera.viewportWidth, (gameMap.getWidth() - 2) * tileSize);
-        camera.viewportHeight = Math.min(camera.viewportHeight, (gameMap.getHeight() - 2) * tileSize);
-
+        camera.update();
         hud.getStage().getViewport().update(width, height, true);
     }
 
@@ -247,8 +228,6 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
-        // Logic when the game screen is shown, if needed
-        // Initialization logic is usually done in the constructor
     }
 
     public void showEndScreen(String imagePath) {
@@ -266,7 +245,6 @@ public class GameScreen implements Screen {
             backgroundMusic.stop();
         }
     }
-
 
     private void setupAudio() {
         if (backgroundMusic != null) {
@@ -287,7 +265,7 @@ public class GameScreen implements Screen {
                 backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/level3.mp3"));
                 break;
         }
-        backgroundMusic.setVolume(0.5f); // Set initial volume
+        backgroundMusic.setVolume(0.5f);
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
@@ -326,11 +304,10 @@ public class GameScreen implements Screen {
     }
 
     private void updateCamera() {
-        // Ensure player is not null
         if (player != null) {
             camera.position.set(
-                    Math.min(Math.max(player.getX() * tileSize + tileSize / 2, camera.viewportWidth / 2), gameMap.getWidth() * tileSize - camera.viewportWidth / 2), // Use gameMap.getWidth()
-                    Math.min(Math.max(player.getY() * tileSize + tileSize / 2, camera.viewportHeight / 2), gameMap.getHeight() * tileSize - camera.viewportHeight / 2), // Use gameMap.getHeight()
+                    Math.min(Math.max(player.getX() * tileSize + tileSize / 2, camera.viewportWidth / 2), gameMap.getWidth() * tileSize - camera.viewportWidth / 2),
+                    Math.min(Math.max(player.getY() * tileSize + tileSize / 2, camera.viewportHeight / 2), gameMap.getHeight() * tileSize - camera.viewportHeight / 2),
                     0
             );
         }
@@ -351,7 +328,6 @@ public class GameScreen implements Screen {
 
     @Override
     public void pause() {
-        // Logic when the game is paused
         if (backgroundMusic != null) {
             backgroundMusic.pause();
         }
@@ -359,23 +335,20 @@ public class GameScreen implements Screen {
 
     @Override
     public void resume() {
-        // Logic when the game is resumed
         if (backgroundMusic != null) {
             backgroundMusic.play();
         }
     }
 
-    // NEW: Check if in infinite mode
     private boolean isInfiniteMode() {
         return "INFINITE_MODE".equals(this.originalMapLevel);
     }
 
-    // NEW: Called by GameManager when a level is won in infinite mode
     public void onInfiniteModeLevelComplete() {
-        if (isInfiniteMode()) { // Confirm currently in infinite mode
+        if (isInfiniteMode()) {
             waitingForNextLevel = true;
             waitTimer = WAIT_BEFORE_NEXT_LEVEL;
-            // Optional: Pause background music
+
             if (backgroundMusic != null) {
                 backgroundMusic.pause();
             }
@@ -383,28 +356,22 @@ public class GameScreen implements Screen {
         }
     }
 
-    // === NEW: Getter methods added for access from other classes ===
     public Music getBackgroundMusic() {
         return backgroundMusic;
     }
     public GameManager getGameManager() {
         return gameManager;
     }
-    // ====================================
 
-    // === NEW: Method called after loading a new level in infinite mode ===
     private void loadNextInfiniteLevel() {
         Gdx.app.log("GameScreen", "Loading next infinite level...");
         System.out.println("Loading next infinite level...");
 
-        // 生成新的地图文件路径
         String newMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 15, 5, 3, 2);
         System.out.println("Generated next map: " + newMapFile);
 
-        // 通知 GameMap 重新加载地图数据
         gameMap.reloadFrom(newMapFile);
 
-        // 重置玩家位置到新地图的起点
         float newStartX = gameMap.getPlayerStartX();
         float newStartY = gameMap.getPlayerStartY();
         if (newStartX == -1 || newStartY == -1) {
@@ -414,7 +381,6 @@ public class GameScreen implements Screen {
         player.setX(newStartX);
         player.setY(newStartY);
 
-        // 更新 GameManager 中的对象引用
         gameManager.onMapReloaded(
                 gameMap.getExits(),
                 gameMap.getHearts(),
@@ -424,23 +390,17 @@ public class GameScreen implements Screen {
                 gameMap.getMorphTraps(),
                 gameMap.getExitArrow()
         );
-        // 更新 exitArrow 引用
+
         gameManager.updateExitArrowReference(gameMap.getExitArrow());
 
-        // 重置 GameManager 的状态标志（用于下一关）
-        gameManager.resetAfterLevelTransition(); // Add this call to reset win/lose flags
+        gameManager.resetAfterLevelTransition();
 
-        // 重置 GameScreen 的等待标志
         waitingForNextLevel = false;
 
-        // Optional: Resume background music for the new level if needed
-        // setupAudio(); // This would re-initialize music based on mapLevel, which might not be desired for infinite mode.
-        // Or, if infinite mode has specific music:
         if (backgroundMusic != null) {
-            backgroundMusic.play(); // Resume the current music track
+            backgroundMusic.play();
         }
 
         Gdx.app.log("GameScreen", "Loaded next infinite level: " + newMapFile);
     }
-    // ====================================
 }

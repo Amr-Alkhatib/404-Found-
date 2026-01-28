@@ -1,4 +1,3 @@
-// File: core/src/de/tum/cit/fop/maze/world/GameCharacter.java
 package de.tum.cit.fop.maze.world;
 
 import com.badlogic.gdx.Gdx;
@@ -16,15 +15,14 @@ import java.util.List;
  */
 public final class GameCharacter extends MapElement {
 
-    // === 控制键 ===
+
     private int upKey;
     private int downKey;
     private int leftKey;
     private int rightKey;
 
-    // --- 修改构造函数：接受明确的初始坐标 ---
     public GameCharacter(float initialX, float initialY, int upKey, int downKey, int leftKey, int rightKey) {
-        super(initialX, initialY); // 设置初始坐标
+        super(initialX, initialY);
         this.upKey = upKey;
         this.downKey = downKey;
         this.leftKey = leftKey;
@@ -34,25 +32,21 @@ public final class GameCharacter extends MapElement {
         defaultFrame = idleRight;
     }
 
-    // --- 保留旧构造函数（可能需要调整调用方）或创建一个使用默认出生点的构造函数 ---
-    // Option 1: 创建一个使用默认出生点 (1, 1) 的构造函数
+
     public GameCharacter(int upKey, int downKey, int leftKey, int rightKey) {
-        this(1.0f, 1.0f, upKey, downKey, leftKey, rightKey); // 默认出生点 (1, 1)
+        this(1.0f, 1.0f, upKey, downKey, leftKey, rightKey);
     }
 
 
-    // === 状态字段 ===
     private boolean sprinting = false;
     private boolean boosted = false;
     private float painTime = Constants.characterPainGainTolerance;
     private float gainTime = Constants.characterPainGainTolerance;
     private float boostedTime = Constants.characterBoostLast;
-    private int heartsCollected = Constants.characterInitialBooks;  // 改为 hearts
+    private int heartsCollected = Constants.characterInitialBooks;
 
-    // === 新增：速度乘数（用于 MorphTrap 减速）===
     private float speedMultiplier = 1.0f;
 
-    // === 动画字段 ===
     private Animation<TextureRegion> walkUpAnimation;
     private Animation<TextureRegion> walkDownAnimation;
     private Animation<TextureRegion> walkLeftAnimation;
@@ -71,7 +65,7 @@ public final class GameCharacter extends MapElement {
     private boolean isAnimating = false;
     private float animationTime = 0f;
 
-    // === 核心：计算移动速度（支持 boost + sprint + multiplier）===
+
     @Override
     protected float calculateSpeed(float delta) {
         float baseSpeed = Constants.characterBaseWalkingSpeed;
@@ -84,13 +78,11 @@ public final class GameCharacter extends MapElement {
             baseSpeed *= Constants.characterRunningBoost;
         }
 
-        // 应用外部乘数（如 MorphTrap 的 0.5）
         baseSpeed *= speedMultiplier;
 
         return baseSpeed * delta;
     }
 
-    // === 公共接口 ===
     public void setSprinting(boolean sprinting) {
         this.sprinting = sprinting;
     }
@@ -104,15 +96,15 @@ public final class GameCharacter extends MapElement {
         boostedTime = 0f;
     }
 
-    public void loseHearts(int amount) {  // 方法名改为 loseHearts
+    public void loseHearts(int amount) {
         heartsCollected -= amount;
         painTime = 0.0f;
         if (heartsCollected < 0) heartsCollected = 0;
     }
 
-    public void collectHeart() {  // 方法名改为 collectHeart
+    public void collectHeart() {
         gainTime = 0.0f;
-        if (heartsCollected < Constants.characterMaxBooks) {  // 注意这里的常量可能也需要调整
+        if (heartsCollected < Constants.characterMaxBooks) {
             heartsCollected++;
         }
     }
@@ -129,13 +121,11 @@ public final class GameCharacter extends MapElement {
         return boosted;
     }
 
-    // --- 新增：用于加载存档时设置位置 ---
     public void setPosition(float x, float y) {
         this.x = x;
         this.y = y;
     }
 
-    // === 更新逻辑 ===
     public void update(float delta, List<Wall> walls) {
         animationTime += delta;
         painTime += delta;
@@ -189,7 +179,6 @@ public final class GameCharacter extends MapElement {
         }
     }
 
-    // === 渲染与动画 ===
     private void loadTexturesAndAnimations() {
         Texture characterSheet = new Texture(Gdx.files.internal("assets/character.png"));
 
@@ -244,8 +233,8 @@ public final class GameCharacter extends MapElement {
 
     public void setHeartsCollected(int count) {
         this.heartsCollected = count;
-        if (this.heartsCollected < 0) this.heartsCollected = 0; // 确保不小于0
-        if (this.heartsCollected > Constants.characterMaxBooks) this.heartsCollected = Constants.characterMaxBooks; // 确保不超过最大值
+        if (this.heartsCollected < 0) this.heartsCollected = 0;
+        if (this.heartsCollected > Constants.characterMaxBooks) this.heartsCollected = Constants.characterMaxBooks;
     }
 
     @Override
@@ -258,7 +247,20 @@ public final class GameCharacter extends MapElement {
         if (gainTime < Constants.characterPainGainTolerance) {
             batch.setColor(0.6f, 1f, 0.8f, 1);
         }
-        batch.draw(frame, x * 32, y * 32, 32, 32);
+
+
+        float scale = 2.0f;
+
+        float drawWidth = 16 * scale;
+        float drawHeight = 32 * scale;
+
+        float drawX = x * 32;
+
+        float yOffset = -8f;
+
+        float drawY = (y * 32) + yOffset;
+
+        batch.draw(frame, drawX, drawY, drawWidth, drawHeight);
         batch.setColor(1, 1, 1, 1);
     }
 }
