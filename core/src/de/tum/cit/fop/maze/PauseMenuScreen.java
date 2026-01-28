@@ -86,13 +86,12 @@ public class PauseMenuScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 pauseMusic.dispose();
-                game.setScreen(gameScreen); // Return to the game
+                game.setScreen(gameScreen);
                 gameScreen.resume();
             }
         });
         table.add(continueButton).width(300).pad(10).row();
 
-        // --- Added Save Button ---
         TextButton saveButton = new TextButton("Save Game", game.getSkin());
         saveButton.addListener(new ChangeListener() {
             @Override
@@ -105,14 +104,9 @@ public class PauseMenuScreen implements Screen {
                 } else {
                     System.err.println("GameManager is null, cannot save from PauseMenu!");
                 }
-                // Optionally, provide feedback or remain on the pause screen
-                // game.setScreen(gameScreen);
-                // gameScreen.resume();
             }
         });
         table.add(saveButton).width(300).pad(10).row();
-        // --- End of Added Code ---
-
 
         TextButton selectNewMap = new TextButton("Select New Map", game.getSkin());
         selectNewMap.addListener(new ChangeListener() {
@@ -125,7 +119,6 @@ public class PauseMenuScreen implements Screen {
         });
 
         table.add(selectNewMap).width(300).pad(10).row();
-
 
         TextButton mainMenuButton = new TextButton("Exit", game.getSkin());
         mainMenuButton.addListener(new ChangeListener() {

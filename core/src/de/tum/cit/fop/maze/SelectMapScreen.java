@@ -63,11 +63,11 @@ public class SelectMapScreen implements Screen {
         table.add(new Label("Select Section", game.getSkin(), "title")).padBottom(80).row();
 
         // --- Buttons ---
-        TextButton level1 = new TextButton("Lone Guardian", game.getSkin());
-        TextButton level2 = new TextButton("Dawn of Crisis", game.getSkin());
-        TextButton level3 = new TextButton("Last Chance", game.getSkin());
-        TextButton level4 = new TextButton("Darkness", game.getSkin());
-        TextButton level5 = new TextButton("Liberty", game.getSkin());
+        TextButton level1 = new TextButton("1", game.getSkin());
+        TextButton level2 = new TextButton("2", game.getSkin());
+        TextButton level3 = new TextButton("2", game.getSkin());
+        TextButton level4 = new TextButton("3", game.getSkin());
+        TextButton level5 = new TextButton("4", game.getSkin());
         TextButton back = new TextButton("Back", game.getSkin());
 
         // --- Add Buttons to Table ---

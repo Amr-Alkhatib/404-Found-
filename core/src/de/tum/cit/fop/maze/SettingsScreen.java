@@ -47,7 +47,6 @@ public class SettingsScreen implements Screen {
 
     private String currentBinding = null;
 
-
     private InputMultiplexer inputMultiplexer;
 
     public SettingsScreen(MazeRunnerGame game) {
