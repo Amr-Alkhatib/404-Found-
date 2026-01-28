@@ -206,7 +206,7 @@ public class GameScreen implements Screen {
             // Only set the flag if not already showing an end screen
             if (!showingEndScreen) {
                 showingEndScreen = true;
-                endScreenImagePath = "assets/images/win.png";
+                endScreenImagePath = "assets/images/victory.png";
                 // Stop background music when showing end screen (optional)
                 if (backgroundMusic != null) {
                     backgroundMusic.stop(); // Or pause() depending on desired effect
@@ -217,7 +217,7 @@ public class GameScreen implements Screen {
             // Only set the flag if not already showing an end screen
             if (!showingEndScreen) {
                 showingEndScreen = true;
-                endScreenImagePath = "assets/images/lose.png";
+                endScreenImagePath = "assets/images/gameOver.png";
                 // Stop background music when showing end screen (optional)
                 if (backgroundMusic != null) {
                     backgroundMusic.stop(); // Or pause() depending on desired effect
@@ -349,7 +349,7 @@ public class GameScreen implements Screen {
         backgroundMusic.play();
 
         winScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gamewin.mp3"));
-        loseScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gameover.mp3"));
+        loseScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gameover.wav"));
         keySound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/key.mp3"));
         heartSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/heart.mp3"));
         boostSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/boostSpeed.mp3"));

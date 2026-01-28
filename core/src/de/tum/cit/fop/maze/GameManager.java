@@ -430,7 +430,7 @@ public class GameManager {
             canSaveOrLoad = false; // Disable saving/loading when game ends
         }
         // Assumes GameManager has access to gameScreen's showEndScreen method
-        gameScreen.showEndScreen("assets/images/lose.png");
+        gameScreen.showEndScreen("assets/images/gameOver.png");
     }
 
     // 替换整个 winGame 方法
@@ -453,7 +453,7 @@ public class GameManager {
             }
         }
         // 只有在非无限模式下才显示结束画面
-        gameScreen.showEndScreen("assets/images/win.png");
+        gameScreen.showEndScreen("assets/images/victory.png");
     }
 
     // 在 GameManager.java 类中添加这两个方法
