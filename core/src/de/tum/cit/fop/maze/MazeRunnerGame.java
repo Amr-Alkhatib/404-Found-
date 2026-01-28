@@ -1,4 +1,3 @@
-// File: core/src/de/tum/cit/fop/maze/MazeRunnerGame.java
 package de.tum.cit.fop.maze;
 
 import com.badlogic.gdx.Game;

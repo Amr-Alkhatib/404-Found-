@@ -10,8 +10,8 @@ import java.util.*;
  */
 public class GameMap {
 
-    private String levelPath; // 新增：保存地图文件路径
-    private String mapFile;   // 新增：保存地图文件路径 (与 levelPath 重复，可根据需要保留一个)
+    private String levelPath;
+    private String mapFile;
 
     /**
      * Constructor for class {@code GameMap}. Initializes the maze.
@@ -19,8 +19,8 @@ public class GameMap {
      * @param levelPath Path to the level file.
      */
     public GameMap(String levelPath) {
-        this.levelPath = levelPath; // 新增：保存路径
-        this.mapFile = levelPath;   // 新增：保存路径
+        this.levelPath = levelPath;
+        this.mapFile = levelPath;
         this.map = GameHelper.loadLevelData(levelPath);
         buildWorld();
     }
@@ -30,7 +30,7 @@ public class GameMap {
     private static int height;
     private final List<Wall> walls = new ArrayList<>();
     private final List<Trap> traps = new ArrayList<>();
-    private final List<MorphTrap> morphTraps = new ArrayList<>(); // ← 新增：MorphTrap 列表
+    private final List<MorphTrap> morphTraps = new ArrayList<>();
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Key> keys = new ArrayList<>();
     private final List<Exit> exits = new ArrayList<>();
@@ -39,10 +39,10 @@ public class GameMap {
     private List<Boost> boosts = new ArrayList<>();
     private Entrance entrance;
 
-    // === 不再自动创建 player ===
+
     private GameCharacter player = null;
 
-    // === 新增：保存玩家起始位置 ===
+
     private float playerStartX = -1;
     private float playerStartY = -1;
 
@@ -54,11 +54,11 @@ public class GameMap {
         return height;
     }
 
-    // --- 新增：getter for level path ---
+
     public String getLevelPath() {
         return this.levelPath;
     }
-    // --- 结束新增 ---
+
 
     public List<Wall> getWalls() {
         return walls;
@@ -68,12 +68,12 @@ public class GameMap {
         return player;
     }
 
-    // === 新增：允许外部设置 player ===
+
     public void setPlayer(GameCharacter player) {
         this.player = player;
     }
 
-    // === 新增：获取起始位置（供 GameScreen 使用）===
+
     public float getPlayerStartX() {
         return playerStartX;
     }
@@ -90,7 +90,7 @@ public class GameMap {
         return traps;
     }
 
-    // === 新增：getter for MorphTraps ===
+
     public List<MorphTrap> getMorphTraps() {
         return morphTraps;
     }
@@ -133,7 +133,7 @@ public class GameMap {
                     case 0 -> walls.add(new Wall(x, y));
                     case 1 -> {
                         entrance = new Entrance(x, y);
-                        // === 只记录位置，不创建 player ===
+
                         playerStartX = x;
                         playerStartY = y;
                         exitArrow = new ExitArrow();
@@ -157,7 +157,7 @@ public class GameMap {
                         keys.add(new Key(x, y));
                         floors.add(new Floor(x, y));
                     }
-                    case 6 -> { // ← 新增：处理 MorphTrap
+                    case 6 -> {
                         morphTraps.add(new MorphTrap(x, y));
                         floors.add(new Floor(x, y));
                     }
@@ -207,7 +207,7 @@ public class GameMap {
         walls.forEach(entity -> entity.render(batch, this));
         keys.forEach(entity -> entity.render(batch));
         traps.forEach(entity -> entity.render(batch));
-        morphTraps.forEach(entity -> entity.render(batch)); // ← 渲染 MorphTrap
+        morphTraps.forEach(entity -> entity.render(batch));
         exits.forEach(entity -> entity.render(batch));
         for (Heart heart : hearts) {
             heart.render(batch, delta);
@@ -219,24 +219,17 @@ public class GameMap {
         if (player != null) player.render(batch);
     }
 
-    // --- 新增：添加 getMapFile 方法以兼容 GameManager ---
-    public String getMapFile() {
-        return this.mapFile; // 直接返回保存的路径
-    }
-    // --- 结束新增 ---
+    public String getMapFile() {return this.mapFile;}
 
-    // --- 新增：添加 reloadFrom 方法 ---
+
     public void reloadFrom(String newMapFile) {
-        this.mapFile = newMapFile; // 更新 mapFile 成员
-        this.levelPath = newMapFile; // 更新 levelPath 成员
-        // 重新加载地图数据
-        this.map.clear(); // Clear the old map data
-        this.map.putAll(GameHelper.loadLevelData(newMapFile)); // Load new data into the same map object
+        this.mapFile = newMapFile;
+        this.levelPath = newMapFile;
+        this.map.clear();
+        this.map.putAll(GameHelper.loadLevelData(newMapFile));
 
-        // Rebuild the world with new data
-        buildWorld(); // This will repopulate walls, enemies, keys, etc.
+        buildWorld();
     }
-    // --- 结束新增 ---
 
     public void dispose() {
         walls.forEach(Wall::dispose);

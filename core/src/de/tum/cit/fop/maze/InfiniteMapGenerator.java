@@ -1,5 +1,3 @@
-// File: core/src/de/tum/cit/fop/maze/InfiniteMapGenerator.java
-
 package de.tum.cit.fop.maze;
 
 import java.io.FileWriter;

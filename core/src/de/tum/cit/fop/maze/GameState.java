@@ -1,4 +1,3 @@
-// File: core/src/de/tum/cit/fop/maze/GameState.java
 package de.tum.cit.fop.maze;
 
 import java.io.Serializable;

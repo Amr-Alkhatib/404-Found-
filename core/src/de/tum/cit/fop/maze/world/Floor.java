@@ -38,7 +38,7 @@ public class Floor extends MapElement {
     private void loadTexture() {
         if (texture == null) {
             texture = new Texture("assets/images/floor.png");
-            floorTexture = new TextureRegion(texture, 0,  0, 219, 220);
+            floorTexture = new TextureRegion(texture);
         }
     }
 
