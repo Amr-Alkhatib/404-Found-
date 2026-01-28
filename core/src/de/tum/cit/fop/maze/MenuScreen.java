@@ -43,18 +43,18 @@ public class MenuScreen implements Screen {
         Viewport viewport = new ScreenViewport(camera);
         stage = new Stage(viewport, game.getSpriteBatch());
 
-        // Load and play background music
+
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/background.mp3"));
         menuMusic.setLooping(true);
         menuMusic.setVolume(0.5f);
         menuMusic.play();
 
-        // Build Main UI Table (Centered)
+
         Table mainTable = new Table();
         mainTable.setFillParent(true);
         stage.addActor(mainTable);
 
-        // Background image
+
         Image backgroundImage = new Image(new Texture(Gdx.files.internal("assets/images/2.png")));
         mainTable.setBackground(backgroundImage.getDrawable());
 

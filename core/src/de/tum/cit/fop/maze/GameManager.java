@@ -166,50 +166,10 @@ public class GameManager {
 
 
     private void applyLoadedState(GameState state) {
-        // Now uses the top-level GameState
-
-        // --- BEGIN MAP CHECK AND RELOAD LOGIC ---
-        // Check if the map in the saved state is different from the current map loaded by GameScreen
         if (!this.gameMap.getLevelPath().equals(state.mapFile)) {
             Gdx.app.log("GameManager", "Saved state map (" + state.mapFile + ") differs from current map (" + this.gameMap.getLevelPath() + "). Reloading map via GameScreen.");
-
-            // The GameScreen is responsible for creating the new GameMap and GameCharacter at the entrance.
-            // We need to tell the GameScreen to reload the map specified in the state.
-            // Assuming GameScreen has a method to restart/reload the level with a given path.
-            // This requires adding a method to MazeRunnerGame or passing GameScreen reference properly.
-            // A simpler but less elegant way is to go back to menu and let user load/start the correct level.
-            // However, for seamless loading within the same GameScreen instance,
-            // we might need to pass control back to GameScreen or have GameScreen inject the new map/character.
-            // Since GameManager holds references to entities from the OLD map, these become invalid.
-            // The cleanest way is often to have GameScreen handle the full reload.
-            // Let's assume GameScreen has a method reloadWithMap(String mapPath).
-            // We need a reference to GameScreen to call this.
-            // If gameScreen is a field (which it seems to be based on constructor), we can call:
-            // gameScreen.reloadWithMap(state.mapFile); // This method needs to be implemented in GameScreen
-            // For now, let's assume GameScreen will handle reloading the map correctly before calling applyLoadedState
-            // OR that the initial GameMap passed to GameManager was already the correct one after a potential reload initiated by GameScreen.
-            // If the maps differ here, it means the logic in GameScreen hasn't ensured the correct map is loaded yet.
-            // This implies GameScreen should handle the reload *before* creating GameManager *or* before calling applyLoadedState.
-            // Given the current structure where GameManager is created once in GameScreen.show(), the safest bet is
-            // that GameScreen ALWAYS recreates GameManager on map change (e.g., when loading a save from a different map).
-            // But if it doesn't, we have a problem here because 'player', 'walls', 'exits', etc. are from the wrong map!
-            // To make this work without restructuring, GameManager could recreate its own references,
-            // similar to the previous example, but it needs access to MazeRunnerGame to do so.
-            // Let's assume GameScreen handles the reload correctly, and this check serves as an assertion/log.
-            // If maps differ, log a warning and proceed, hoping GameScreen managed the transition.
-            // If GameScreen didn't reload, then the entity lists below are wrong!
             Gdx.app.error("GameManager", "WARNING: Attempting to apply state from a different map! Current map: " + this.gameMap.getLevelPath() + ", State map: " + state.mapFile + ". Ensure GameScreen handles map reload before calling applyLoadedState.");
-
-            // In a robust system, you'd either:
-            // 1. Have GameScreen fully manage this and reload the entire GameScreen/GameState.
-            // 2. Have GameManager take over the map reloading itself (needs MazeRunnerGame ref).
-            // For now, we'll proceed but acknowledge the potential issue above.
         }
-        // --- END MAP CHECK AND RELOAD LOGIC ---
-
-        // Update Player
-        // At this point, we assume 'player' belongs to the map defined in 'state.mapFile'
-        // (either because it was the same map, or GameScreen correctly reloaded before calling this)
         player.setX(state.playerX);
         player.setY(state.playerY);
 

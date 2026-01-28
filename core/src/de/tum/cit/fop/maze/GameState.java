@@ -8,7 +8,7 @@ import java.util.List;
  * This class must implement Serializable to allow object serialization.
  */
 public class GameState implements Serializable {
-    private static final long serialVersionUID = 1L; // Version control for serialization
+    private static final long serialVersionUID = 1L;
 
     // Player state
     public float playerX, playerY;
@@ -17,7 +17,7 @@ public class GameState implements Serializable {
     // Collected items state
     public List<Float> collectedKeyPositionsX;
     public List<Float> collectedKeyPositionsY;
-    // === 新增：成就系统字段 ===
+
     public int totalHeartsCollected;
     public int totalEnemiesKilled;
     // Exit state
@@ -128,27 +128,18 @@ public class GameState implements Serializable {
         this.mapFile = mapFile;
     }
 
-    // --- Added Getter Methods ---
     public String getMapFile() {
         return mapFile;
     }
-    // 修改构造函数签名（在参数列表最后添加）
     public GameState(
-            // ... 原有所有参数 ...,
             float timePlayed, String mapFile,
-            // === 新增参数 ===
             int totalHeartsCollected, int totalEnemiesKilled) {
 
-        // ... 原有赋值 ...
 
         this.timePlayed = timePlayed;
         this.mapFile = mapFile;
 
-        // === 新增赋值 ===
         this.totalHeartsCollected = totalHeartsCollected;
         this.totalEnemiesKilled = totalEnemiesKilled;
     }
-    // 如果需要其他字段的 getter，也可以在这里添加
-    // public float getPlayerX() { return playerX; }
-    // ... etc
 }

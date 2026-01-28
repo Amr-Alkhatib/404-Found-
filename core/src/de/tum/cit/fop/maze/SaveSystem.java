@@ -9,7 +9,7 @@ import java.io.*;
  */
 public class SaveSystem {
 
-    private static final String SAVE_FILE_PATH = "game_save.dat"; // Path to the save file
+    private static final String SAVE_FILE_PATH = "game_save.dat";
 
     /**
      * Saves the provided GameState object to a file.
@@ -18,7 +18,7 @@ public class SaveSystem {
      */
     public static void saveGame(GameState gameState) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SAVE_FILE_PATH))) {
-            oos.writeObject(gameState); // Serialize the GameState object
+            oos.writeObject(gameState);
             System.out.println("Game saved successfully to " + SAVE_FILE_PATH);
         } catch (IOException e) {
             System.err.println("Error saving game: " + e.getMessage());
@@ -40,7 +40,7 @@ public class SaveSystem {
         File saveFile = new File(SAVE_FILE_PATH);
         if (!saveFile.exists()) {
             System.out.println("No save file found at " + SAVE_FILE_PATH + ".");
-            return null; // No save to load
+            return null;
         }
 
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(SAVE_FILE_PATH))) {
@@ -50,7 +50,7 @@ public class SaveSystem {
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Error loading game: " + e.getMessage());
             e.printStackTrace();
-            return null; // Return null on error
+            return null;
         }
     }
 

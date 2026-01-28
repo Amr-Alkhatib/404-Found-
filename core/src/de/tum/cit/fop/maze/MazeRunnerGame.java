@@ -20,28 +20,28 @@ public class MazeRunnerGame extends Game {
 
     private final NativeFileChooser fileChooser;
     private TextButton infiniteModeButton;
-    // Screens
+
+
     private MenuScreen menuScreen;
     private GameScreen gameScreen;
     private PauseMenuScreen pauseMenuScreen;
     private SelectMapScreen selectMapScreen;
 
-    // Global resources
+
     private SpriteBatch spriteBatch;
     private TextureManager textureManager;
     private Skin skin;
 
-    // Game map and viewport
+
     private GameMap gameMap;
     private Viewport viewport;
 
-    // Background music reference for volume control
+
     private Music currentBackgroundMusic;
 
-    // === NEW: Added infinite mode tracking variables ===
-    private boolean isInfiniteMode = false; // Track if currently in infinite mode
-    private int currentInfiniteLevel = 0;   // Track the current level number in infinite mode
-    // ================================================
+
+    private boolean isInfiniteMode = false;
+    private int currentInfiniteLevel = 0;
 
     /**
      * Constructor for MazeRunnerGame.
@@ -51,7 +51,7 @@ public class MazeRunnerGame extends Game {
     private int totalScore = 0;
     public void addToTotalScore(int points) {
         totalScore += points;
-        SaveSystem.saveTotalScore(totalScore); // 持久化
+        SaveSystem.saveTotalScore(totalScore);
     }
     public int getTotalScore() { return totalScore; }
 
@@ -74,9 +74,6 @@ public class MazeRunnerGame extends Game {
         goToMenu();
     }
 
-    // REMOVED the old goToGameFromInfiniteMode method that had incorrect logic.
-    // It's now handled by passing the map file path directly to the GameScreen constructor.
-
     /**
      * Switches to the menu screen.
      */
@@ -86,7 +83,7 @@ public class MazeRunnerGame extends Game {
         }
         setScreen(menuScreen);
 
-        // Clean up other screens
+
         if (gameScreen != null) {
             gameScreen.dispose();
             gameScreen = null;
@@ -101,51 +98,43 @@ public class MazeRunnerGame extends Game {
         }
     }
 
-    // In MazeRunnerGame.java
-    // Modify goToGameNew as an example (apply similar logic to goToGame methods):
+
     public void goToGameNew(String mapLevel) {
-        if (gameScreen != null) { // Use the existing gameScreen member variable
-            gameScreen.dispose();
-        }
-        // Create new game screen and assign it to the member variable
-        gameScreen = new GameScreen(this, mapLevel, true); // Pass 'true' to ignore saved state
-        currentBackgroundMusic = gameScreen.getBackgroundMusic();
-        setScreen(gameScreen); // This sets the LibGDX Game.currentScreen
-
-        cleanupOtherScreens();
-    }
-
-    // Remember to update 'gameScreen' member variable in ALL goToGame methods:
-    // goToGame(String)
-    // goToGame(GameState)
-    // goToGameNew(String)
-    // Example for goToGame(String):
-    public void goToGame(String mapLevel) {
         if (gameScreen != null) {
             gameScreen.dispose();
         }
-        gameScreen = new GameScreen(this, mapLevel, false); // Pass 'false' to allow loading saved state
+
+        gameScreen = new GameScreen(this, mapLevel, true);
         currentBackgroundMusic = gameScreen.getBackgroundMusic();
         setScreen(gameScreen);
 
         cleanupOtherScreens();
     }
 
-    // Example for goToGame(GameState):
+
+    public void goToGame(String mapLevel) {
+        if (gameScreen != null) {
+            gameScreen.dispose();
+        }
+        gameScreen = new GameScreen(this, mapLevel, false);
+        currentBackgroundMusic = gameScreen.getBackgroundMusic();
+        setScreen(gameScreen);
+
+        cleanupOtherScreens();
+    }
+
+
     public void goToGame(GameState loadedState) {
         if (gameScreen != null) {
             gameScreen.dispose();
         }
-        gameScreen = new GameScreen(this, loadedState.mapFile, false); // allow load, but we'll override
-        // Restore the exact saved state - this happens *after* gameScreen creation
+        gameScreen = new GameScreen(this, loadedState.mapFile, false);
         gameScreen.getGameManager().requestLoadGameState(loadedState);
         currentBackgroundMusic = gameScreen.getBackgroundMusic();
         setScreen(gameScreen);
 
         cleanupOtherScreens();
     }
-
-    // === 原有方法：用于底层加载（包括从 GameState 加载时的初始创建）===
 
 
     /**
@@ -154,36 +143,32 @@ public class MazeRunnerGame extends Game {
      */
     public void startInfiniteMode() {
         System.out.println("MazeRunnerGame: Starting Infinite Mode...");
-        // Set the flag
-        this.isInfiniteMode = true;
-        // Reset level counter
-        this.currentInfiniteLevel = 1; // Or 0, depending on your preference
 
-        // Define initial map parameters (these could be configurable)
-        int width = 20; // Adjusted to match your example (20x20 grid)
+        this.isInfiniteMode = true;
+        this.currentInfiniteLevel = 1;
+
+        int width = 20;
         int height = 20;
-        int numTraps = 10; // Adjusted number of elements
+        int numTraps = 10;
         int numEnemies = 2;
         int numMorphTraps = 3;
 
-        // Generate the first map file path
+
         String generatedMapPath = InfiniteMapGenerator.generateInfiniteMap(
                 width, height, numTraps, numEnemies, numMorphTraps);
 
         if (generatedMapPath == null) {
             System.err.println("Failed to generate initial infinite map. Aborting startInfiniteMode.");
-            return; // Or go back to menu?
+            return;
         }
 
         System.out.println("MazeRunnerGame: Generated first map for infinite mode: " + generatedMapPath);
 
-        // Create the first GameScreen for infinite mode
-        // Pass the path to the generated map file
-        GameScreen newGameScreen = new GameScreen(this, generatedMapPath, true /* ignoreSavedState, also implies infinite mode if needed internally */);
-        this.gameScreen = newGameScreen; // Assign to member variable
-        this.setScreen(gameScreen);      // Set the LibGDX current screen
 
-        // Clean up other screens (if any were active before)
+        GameScreen newGameScreen = new GameScreen(this, generatedMapPath, true /* ignoreSavedState, also implies infinite mode if needed internally */);
+        this.gameScreen = newGameScreen;
+        this.setScreen(gameScreen);
+
         cleanupOtherScreens();
     }
 
@@ -193,46 +178,37 @@ public class MazeRunnerGame extends Game {
      */
     public void continueInfiniteMode() {
         if (!isInfiniteMode) {
-            // Should not happen if called correctly
+
             System.err.println("Warning: continueInfiniteMode called but not in infinite mode!");
             return;
         }
 
         System.out.println("MazeRunnerGame: Continuing Infinite Mode to level " + (currentInfiniteLevel + 1));
 
-        // Increment level counter
         this.currentInfiniteLevel++;
 
-        // Define map parameters that might scale with level (difficulty scaling)
-        int width = 20 + (currentInfiniteLevel / 5); // Increase size every 5 levels
-        int height = 20 + (currentInfiniteLevel / 5);
-        int numTraps = 10 + currentInfiniteLevel; // Increase traps linearly
-        int numEnemies = 2 + (currentInfiniteLevel / 3); // Increase enemies every 3 levels
-        int numMorphTraps = 3 + (currentInfiniteLevel / 10); // Increase morph traps slowly
 
-        // Generate the next map file path
+        int width = 20 + (currentInfiniteLevel / 5);
+        int height = 20 + (currentInfiniteLevel / 5);
+        int numTraps = 10 + currentInfiniteLevel;
+        int numEnemies = 2 + (currentInfiniteLevel / 3);
+        int numMorphTraps = 3 + (currentInfiniteLevel / 10);
+
         String generatedMapPath = InfiniteMapGenerator.generateInfiniteMap(
                 width, height, numTraps, numEnemies, numMorphTraps);
 
         if (generatedMapPath == null) {
             System.err.println("Failed to generate subsequent infinite map for level " + currentInfiniteLevel + ". Aborting continueInfiniteMode.");
-            // Decide: end game? retry? For now, just return.
             return;
         }
 
         System.out.println("MazeRunnerGame: Generated next map for infinite mode (level " + currentInfiniteLevel + "): " + generatedMapPath);
 
-        // Create the next GameScreen for infinite mode
         GameScreen newGameScreen = new GameScreen(this, generatedMapPath, true /* ignoreSavedState, implies infinite mode */);
-        this.gameScreen = newGameScreen; // Assign to member variable
-        this.setScreen(gameScreen);      // Set the LibGDX current screen
+        this.gameScreen = newGameScreen;
+        this.setScreen(gameScreen);
 
-        // Clean up the previous game screen if necessary (cleanupOtherScreens handles this)
         cleanupOtherScreens();
-
-        // Potentially update total score based on level completion here,
-        // or let GameScreen handle scoring per level and accumulate.
-        // Example: addToTotalScore(calculateLevelScore(currentInfiniteLevel));
     }
 
     /**
@@ -242,9 +218,8 @@ public class MazeRunnerGame extends Game {
     public void endInfiniteMode() {
         System.out.println("MazeRunnerGame: Ending Infinite Mode.");
         this.isInfiniteMode = false;
-        this.currentInfiniteLevel = 0; // Reset level counter
-        // Optionally, save the final total score here if not already saved per level/game over
-        goToMenu(); // Go back to the main menu
+        this.currentInfiniteLevel = 0;
+        goToMenu();
     }
 
     /**
@@ -263,12 +238,11 @@ public class MazeRunnerGame extends Game {
     }
 
     public void goToPause() {
-        if (gameScreen == null) return; // Safety check
+        if (gameScreen == null) return;
 
         pauseMenuScreen = new PauseMenuScreen(this, gameScreen);
         setScreen(pauseMenuScreen);
 
-        // No need to dispose gameScreen — it's paused, not closed
         if (menuScreen != null) {
             menuScreen.dispose();
             menuScreen = null;
@@ -292,7 +266,6 @@ public class MazeRunnerGame extends Game {
             pauseMenuScreen.setPauseMusic();
         }
 
-        // Clean up others if needed
         if (menuScreen != null) {
             menuScreen.dispose();
             menuScreen = null;
@@ -334,7 +307,6 @@ public class MazeRunnerGame extends Game {
         }
     }
 
-    // --- Getters ---
 
     public SpriteBatch getSpriteBatch() {
         return spriteBatch;
@@ -360,7 +332,6 @@ public class MazeRunnerGame extends Game {
         return currentBackgroundMusic;
     }
 
-    // NEW: Getter method for the current GameScreen instance
     public GameScreen getCurrentGameScreenInstance() {
         return gameScreen; // Return the member variable
     }

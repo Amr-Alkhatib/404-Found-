@@ -97,10 +97,9 @@ public class PauseMenuScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 System.out.println("PauseMenu Save button clicked.");
-                // Access the GameManager from the GameScreen instance using the getter
-                GameManager manager = gameScreen.getGameManager(); // Use the getter added to GameScreen
+                GameManager manager = gameScreen.getGameManager();
                 if (manager != null) {
-                    manager.requestSaveGameState(); // Call the save method in GameManager
+                    manager.requestSaveGameState();
                 } else {
                     System.err.println("GameManager is null, cannot save from PauseMenu!");
                 }
