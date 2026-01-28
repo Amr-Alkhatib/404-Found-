@@ -351,7 +351,7 @@ public class GameScreen implements Screen {
         winScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gamewin.mp3"));
         loseScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gameover.mp3"));
         keySound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/key.mp3"));
-        heartSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/win.mp3"));
+        heartSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/heart.mp3"));
         boostSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/boostSpeed.mp3"));
         trapSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/fire.mp3"));
         enemySound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/enemy.mp3"));

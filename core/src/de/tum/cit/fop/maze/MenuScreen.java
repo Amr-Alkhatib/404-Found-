@@ -46,7 +46,7 @@ public class MenuScreen implements Screen {
         stage = new Stage(viewport, game.getSpriteBatch());
 
         // Load and play background music
-        menuMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/level1.mp3")); // Adjust path as needed
+        menuMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/background.mp3")); // Adjust path as needed
         menuMusic.setLooping(true);
         menuMusic.setVolume(0.5f);
         menuMusic.play();
