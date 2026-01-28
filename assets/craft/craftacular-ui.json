@@ -157,4 +157,19 @@ com.badlogic.gdx.scenes.scene2d.ui.Window$WindowStyle: {
 		titleFont: font
 	}
 }
-}
+	com.badlogic.gdx.scenes.scene2d.ui.Window$WindowStyle: {
+		default: {
+			background: window,
+			titleFont: font
+		}
+	},
+
+	// 👇 新增的 CheckBox 样式
+	com.badlogic.gdx.scenes.scene2d.ui.CheckBox$CheckBoxStyle: {
+		default: {
+			checkboxOn: button-hover,
+			checkboxOff: button,
+			font: font,
+			fontColor: white
+		}
+	}}
