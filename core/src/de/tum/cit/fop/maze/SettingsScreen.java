@@ -21,7 +21,7 @@ public class SettingsScreen implements Screen {
     private Stage stage;
     private Texture backgroundTexture;
 
-    // UI Elements
+
     private Slider musicSlider;
     private Slider sfxSlider;
     private CheckBox fullscreenCheckBox;
@@ -31,7 +31,7 @@ public class SettingsScreen implements Screen {
     private Label leftKeyLabel;
     private Label rightKeyLabel;
     private Label actionKeyLabel;
-    private Label sprintKeyLabel; // ← 新增：奔跑键
+    private Label sprintKeyLabel;
 
     // Preferences keys
     private static final String PREF_MUSIC_VOLUME = "music_volume";
@@ -42,12 +42,12 @@ public class SettingsScreen implements Screen {
     private static final String PREF_KEY_LEFT = "key_left";
     private static final String PREF_KEY_RIGHT = "key_right";
     private static final String PREF_KEY_ACTION = "key_action";
-    private static final String PREF_KEY_SPRINT = "key_sprint"; // ← 新增
+    private static final String PREF_KEY_SPRINT = "key_sprint";
 
-    // 当前正在重绑定的按键（null 表示无）
+
     private String currentBinding = null;
 
-    // 输入多路复用器
+
     private InputMultiplexer inputMultiplexer;
 
     public SettingsScreen(MazeRunnerGame game) {
@@ -67,14 +67,14 @@ public class SettingsScreen implements Screen {
         int keyAction = prefs.getInteger(PREF_KEY_ACTION, Input.Keys.SPACE);
         int keySprint = prefs.getInteger(PREF_KEY_SPRINT, Input.Keys.SHIFT_LEFT); // ← 默认为左 Shift
 
-        // Build UI
+
         Table table = new Table();
         table.setFillParent(true);
         stage.addActor(table);
 
         table.add(new Label("Settings", game.getSkin(), "title")).padBottom(40).row();
 
-        // Music Volume
+
         table.add(new Label("Music Volume:", game.getSkin())).left().padRight(20);
         musicSlider = new Slider(0f, 1f, 0.01f, false, game.getSkin());
         musicSlider.setValue(savedMusic);
@@ -88,51 +88,47 @@ public class SettingsScreen implements Screen {
         });
         table.add(musicSlider).width(200).padBottom(15).row();
 
-        // SFX Volume
+
         table.add(new Label("Sound Effects:", game.getSkin())).left().padRight(20);
         sfxSlider = new Slider(0f, 1f, 0.01f, false, game.getSkin());
         sfxSlider.setValue(savedSfx);
         table.add(sfxSlider).width(200).padBottom(25).row();
 
-        // Fullscreen
+
         fullscreenCheckBox = new CheckBox("Fullscreen Mode", game.getSkin());
         fullscreenCheckBox.setChecked(savedFullscreen);
         table.add(fullscreenCheckBox).colspan(2).left().padBottom(30).row();
 
-        // Key Bindings Header
+
         table.add(new Label("Key Bindings:", game.getSkin(), "bold")).colspan(2).left().padTop(20).padBottom(15).row();
 
-        // Up
+
         table.add(new Label("Move Up:", game.getSkin())).left().padRight(20);
         upKeyLabel = createKeyLabel(keyUp);
         table.add(upKeyLabel).left().padBottom(8).row();
 
-        // Down
+
         table.add(new Label("Move Down:", game.getSkin())).left().padRight(20);
         downKeyLabel = createKeyLabel(keyDown);
         table.add(downKeyLabel).left().padBottom(8).row();
 
-        // Left
+
         table.add(new Label("Move Left:", game.getSkin())).left().padRight(20);
         leftKeyLabel = createKeyLabel(keyLeft);
         table.add(leftKeyLabel).left().padBottom(8).row();
 
-        // Right
         table.add(new Label("Move Right:", game.getSkin())).left().padRight(20);
         rightKeyLabel = createKeyLabel(keyRight);
         table.add(rightKeyLabel).left().padBottom(8).row();
 
-        // Action
         table.add(new Label("Action:", game.getSkin())).left().padRight(20);
         actionKeyLabel = createKeyLabel(keyAction);
         table.add(actionKeyLabel).left().padBottom(8).row();
 
-        // Sprint ← 新增
         table.add(new Label("Sprint:", game.getSkin())).left().padRight(20);
         sprintKeyLabel = createKeyLabel(keySprint);
         table.add(sprintKeyLabel).left().padBottom(20).row();
 
-        // Back Button
         TextButton backButton = new TextButton("Back to Menu", game.getSkin());
         backButton.addListener(new ChangeListener() {
             @Override
@@ -173,14 +169,12 @@ public class SettingsScreen implements Screen {
         prefs.putFloat(PREF_SFX_VOLUME, sfxSlider.getValue());
         prefs.putBoolean(PREF_FULLSCREEN, fullscreenCheckBox.isChecked());
 
-        // Apply fullscreen
         if (fullscreenCheckBox.isChecked()) {
             Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
         } else {
             Gdx.graphics.setWindowedMode(1280, 720);
         }
 
-        // Apply music volume immediately
         if (game.getCurrentBackgroundMusic() != null) {
             game.getCurrentBackgroundMusic().setVolume(musicSlider.getValue());
         }
@@ -223,7 +217,7 @@ public class SettingsScreen implements Screen {
                     }
                     prefs.flush();
                     currentBinding = null;
-                    return true; // consume the event
+                    return true;
                 }
                 return false;
             }
