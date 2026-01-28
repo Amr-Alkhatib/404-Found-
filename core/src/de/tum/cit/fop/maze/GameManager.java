@@ -1,4 +1,4 @@
-package de.tum.cit.fop.maze; // Make sure package matches
+package de.tum.cit.fop.maze;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -11,9 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameManager {
-
-    // === 新增：成就计数器 ===
-    private boolean isInfiniteMode = false; // 新增：标记是否为无限模式
+    private boolean isInfiniteMode = false;
     private int totalHeartsCollected = 0;
     private int totalEnemiesKilled = 0;
 
@@ -39,7 +37,6 @@ public class GameManager {
     private float timePlayed;
     private Label timer;
 
-    // Add flag to prevent saving during win/lose screen
     private boolean canSaveOrLoad = true;
 
     public GameManager(GameMap gameMap, MazeRunnerGame game, GameScreen gameScreen, GameCharacter player, Hud hud, List<Wall> walls, List<Enemy> enemies, List<Key> keys, List<Trap> traps, Entrance entrance, List<Exit> exits, List<Heart> hearts, List<Boost> boosts, List<MorphTrap> morphTraps, ExitArrow exitArrow, int sprintKeyCode) {
@@ -60,22 +57,15 @@ public class GameManager {
         this.sprintKeyCode = sprintKeyCode;
         this.morphTraps = morphTraps;
         this.timePlayed = 0f;
-        this.isInfiniteMode = "INFINITE_MODE".equals(gameMap.getMapFile()); // 假设 GameMap 有 getMapFile() 方法返回其文件路径
-
+        this.isInfiniteMode = "INFINITE_MODE".equals(gameMap.getMapFile());
         setupTimer();
 
-        // --- NEW: Try to load game state on startup ---
-        GameState loadedState = SaveSystem.loadGame(); // Now refers to the top-level GameState
+        GameState loadedState = SaveSystem.loadGame();
         if (loadedState != null) {
-            // Apply the loaded state to the current game objects
             applyLoadedState(loadedState);
         }
-        // --- END NEW ---
     }
 
-    // --- REMOVED: Inner GameState Class (moved to its own file) ---
-
-    // --- NEW: Method to create a GameState object from current manager state ---
     public GameState getCurrentGameState() {
         List<Float> collectedKeyPositionsX = new ArrayList<>();
         List<Float> collectedKeyPositionsY = new ArrayList<>();
@@ -173,9 +163,8 @@ public class GameManager {
                 this.totalEnemiesKilled
         );
     }
-    // --- END NEW ---
 
-    // --- NEW: Method to apply loaded state to existing objects ---
+
     private void applyLoadedState(GameState state) {
         // Now uses the top-level GameState
 
@@ -223,18 +212,15 @@ public class GameManager {
         // (either because it was the same map, or GameScreen correctly reloaded before calling this)
         player.setX(state.playerX);
         player.setY(state.playerY);
-        // ...
 
-        // Restore achievement counters if available (for new saves)
+
         try {
             this.totalHeartsCollected = state.totalHeartsCollected;
             this.totalEnemiesKilled = state.totalEnemiesKilled;
         } catch (Exception e) {
-            // Old save file without these fields → keep counters at 0
             Gdx.app.log("GameManager", "Old save detected: achievement counters not loaded.");
         }
 
-        // Update Keys
         for (Key key : keys) {
             boolean foundInCollected = false;
             for (int i = 0; i < state.collectedKeyPositionsX.size(); i++) {
@@ -245,11 +231,9 @@ public class GameManager {
                     break;
                 }
             }
-            // If not in collected list, ensure it's not marked as collected
-            // No action needed if collect() sets a flag, just don't call it again if already collected.
         }
 
-        // Update Exits based on key collection and loaded lock status
+
         for (int i = 0; i < state.exitPositionsX.size(); i++) {
             float x = state.exitPositionsX.get(i);
             float y = state.exitPositionsY.get(i);
@@ -265,12 +249,12 @@ public class GameManager {
                         exit.unlock();
                         walls.remove(exit);
                     }
-                    break; // Found the matching exit
+                    break;
                 }
             }
         }
 
-        // Update Enemies
+
         for (int i = 0; i < state.enemyPositionsX.size(); i++) {
             float x = state.enemyPositionsX.get(i);
             float y = state.enemyPositionsY.get(i);
@@ -282,12 +266,12 @@ public class GameManager {
                     } else {
                         enemy.deactivate();
                     }
-                    break; // Found the matching enemy
+                    break;
                 }
             }
         }
 
-        // Update Traps
+
         for (int i = 0; i < state.trapPositionsX.size(); i++) {
             float x = state.trapPositionsX.get(i);
             float y = state.trapPositionsY.get(i);
@@ -299,12 +283,12 @@ public class GameManager {
                     } else {
                         trap.deactivate();
                     }
-                    break; // Found the matching trap
+                    break;
                 }
             }
         }
 
-        // Update Hearts
+
         for (int i = 0; i < state.heartPositionsX.size(); i++) {
             float x = state.heartPositionsX.get(i);
             float y = state.heartPositionsY.get(i);
@@ -314,13 +298,13 @@ public class GameManager {
                     if (isCollected) {
                         heart.collect();
                     }
-                    // If not collected, do nothing, let it remain uncollected
-                    break; // Found the matching heart
+
+                    break;
                 }
             }
         }
 
-        // Update Boosts
+
         for (int i = 0; i < state.boostPositionsX.size(); i++) {
             float x = state.boostPositionsX.get(i);
             float y = state.boostPositionsY.get(i);
@@ -330,13 +314,13 @@ public class GameManager {
                     if (isCollected) {
                         boost.collect();
                     }
-                    // If not collected, do nothing
-                    break; // Found the matching boost
+
+                    break;
                 }
             }
         }
 
-        // Update MorphTraps
+
         for (int i = 0; i < state.morphTrapPositionsX.size(); i++) {
             float x = state.morphTrapPositionsX.get(i);
             float y = state.morphTrapPositionsY.get(i);
@@ -350,46 +334,40 @@ public class GameManager {
                         trap.deactivate();
                     }
                     trap.setAffectingPlayer(isAffectingPlayer);
-                    break; // Found the matching trap
+                    break;
                 }
             }
         }
 
-        // Update Time
         this.timePlayed = state.timePlayed;
         updateTimerDisplay();
 
         Gdx.app.log("GameManager", "Applied loaded game state from file: " + state.mapFile);
     }
-    // --- END NEW ---
+
 
     public void update(float delta) {
-        // Check for save/load input (e.g., F5 to save)
         if (canSaveOrLoad) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.F5)) {
-                // Pass the GameState object created by the new method
-                SaveSystem.saveGame(getCurrentGameState()); // Pass the GameState object
+                SaveSystem.saveGame(getCurrentGameState());
             }
-            // Optional: Add a key for loading, e.g., F9
+
             if (Gdx.input.isKeyJustPressed(Input.Keys.F9)) {
-                GameState loadedState = SaveSystem.loadGame(); // Now refers to the top-level GameState
+                GameState loadedState = SaveSystem.loadGame();
                 if (loadedState != null) {
                     applyLoadedState(loadedState);
                 }
             }
         }
 
-        // === Control Sprinting ===
         boolean isSprinting = Gdx.input.isKeyPressed(sprintKeyCode);
         player.setSprinting(isSprinting && !win && !lose);
 
-        // Only accumulate time while game is active
         if (!win && !lose) {
             timePlayed += delta;
             updateTimerDisplay();
         }
 
-        // Prevent updates if game is over
         if (!win && !lose) {
             player.update(delta, walls);
             exitArrow.update(player.getX(), player.getY(), exits);
@@ -405,7 +383,6 @@ public class GameManager {
             handleBoostCollection();
         }
 
-        // ====== MorphTrap Slowdown Logic ======
         boolean onMorphTrap = false;
         float px = player.getX();
         float py = player.getY();
@@ -426,37 +403,33 @@ public class GameManager {
     private void gameOver() {
         if (!lose) {
             gameScreen.playSound("losescreen");
+
             lose = true;
-            canSaveOrLoad = false; // Disable saving/loading when game ends
+            canSaveOrLoad = false;
+
+            gameScreen.showEndScreen("assets/images/gameOver.png");
         }
-        // Assumes GameManager has access to gameScreen's showEndScreen method
-        gameScreen.showEndScreen("assets/images/gameOver.png");
     }
 
-    // 替换整个 winGame 方法
+
     private void winGame() {
         if (!win) {
             gameScreen.playSound("winscreen");
             win = true;
             canSaveOrLoad = false;
-            // ... 计算分数的逻辑 ...
-            int levelScore = game.getTotalScore(); // 确保这行存在
+
+            int levelScore = game.getTotalScore();
             game.addToTotalScore(levelScore);
             Gdx.app.log("GameManager", "Level completed! Score added: " + levelScore + " (Hearts: " + totalHeartsCollected + ", Enemies: " + totalEnemiesKilled + ")");
 
-            // 新增：如果在无限模式下获胜
             if (isInfiniteMode) {
-                // 通知 GameScreen 准备加载下一关
-                gameScreen.onInfiniteModeLevelComplete(); // 调用 GameScreen 的新方法
-                // 注意：不再调用 showEndScreen，而是让 GameScreen 处理后续
-                return; // 提前返回，不执行下面的 showEndScreen
+                gameScreen.onInfiniteModeLevelComplete();
+                return;
             }
         }
-        // 只有在非无限模式下才显示结束画面
         gameScreen.showEndScreen("assets/images/victory.png");
     }
 
-    // 在 GameManager.java 类中添加这两个方法
     /**
      * 当 GameMap 重新加载后，GameManager 需要更新其持有的实体列表内容。
      * 使用 clear() 和 addAll() 来修改 final List 的内容，而不是引用。
@@ -470,7 +443,7 @@ public class GameManager {
             List<MorphTrap> morphTraps,
             ExitArrow newExitArrow // Add this parameter
     ) {
-        // Update the references to the new lists provided by the GameMap
+
         this.exits.clear();
         this.exits.addAll(exits);
 
@@ -489,22 +462,18 @@ public class GameManager {
         this.morphTraps.clear();
         this.morphTraps.addAll(morphTraps);
 
-        // NEW: Update the exitArrow reference
-        this.exitArrow = newExitArrow; // Add this line
+        this.exitArrow = newExitArrow;
 
         Gdx.app.log("GameManager", "Updated entity list contents and exitArrow after map reload.");
     }
 
-    /**
-     * 在关卡转换后重置 GameManager 的状态标志。
-     */
+
     public void resetAfterLevelTransition() {
         this.win = false;
         this.lose = false;
-        this.canSaveOrLoad = true; // 重新允许保存/加载
-        this.timePlayed = 0f;      // 重置关卡时间
-        // 重置 HUD 显示的时间？（如果 HUD 直接读取 GameManager 的 timePlayed）
-        // hud.updateTimerDisplay(); // 如果 hud 有此方法
+        this.canSaveOrLoad = true;
+        this.timePlayed = 0f;
+
         Gdx.app.log("GameManager", "Reset flags after level transition.");
     }
 
@@ -520,8 +489,7 @@ public class GameManager {
         }
         for (Enemy enemy : enemies) {
             if (enemy.isActive() && GameHelper.isAtCoordinate(player.getX(), player.getY(), List.of(enemy))) {
-                // === 方案 A：每次敌人被停用都算作“杀死” ===
-                totalEnemiesKilled++; // ✅ 计数
+                totalEnemiesKilled++;
                 player.loseHearts(1);
                 enemy.deactivate();
                 gameScreen.playSound("player");
@@ -540,7 +508,7 @@ public class GameManager {
 
     public int calculateFinalScore() {
         return totalHeartsCollected * 100 + totalEnemiesKilled * 50;
-    } // Getter for UI
+    }
 
     public int getTotalHeartsCollected() {
         return totalHeartsCollected;
@@ -567,7 +535,7 @@ public class GameManager {
                 player.collectHeart();
                 heart.collect();
                 gameScreen.playSound("heart");
-                totalHeartsCollected++; // ✅ 新增计数
+                totalHeartsCollected++;
                 return;
             }
         }
@@ -645,7 +613,7 @@ public class GameManager {
         hud.getStage().addActor(timer);
     }
 
-    // --- NEW: Getter Methods Required by GameState and SaveSystem ---
+
     public GameCharacter getPlayer() {
         return player;
     }
@@ -681,16 +649,15 @@ public class GameManager {
     public List<MorphTrap> getMorphTraps() {
         return morphTraps;
     }
-    // --- END NEW ---
 
-    // --- NEW: Public method for external save requests (e.g., from UI buttons) ---
+
     public void requestSaveGameState() {
         if (!canSaveOrLoad) {
             Gdx.app.log("GameManager", "Save/Load disabled (e.g., during win/lose).");
             return;
         }
-        // Use the new method to get the state object
-        SaveSystem.saveGame(getCurrentGameState()); // Pass the GameState object
+
+        SaveSystem.saveGame(getCurrentGameState());
     }
 
     public void requestLoadGameState(GameState loadedState) {
@@ -702,6 +669,4 @@ public class GameManager {
     public void updateExitArrowReference(ExitArrow newExitArrow) {
         this.exitArrow = newExitArrow;
     }
-
-    // --- END NEW ---
 }

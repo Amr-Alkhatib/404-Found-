@@ -1,5 +1,3 @@
-// File: core/src/de/tum/cit/fop/maze/GameScreen.java
-// ... (imports remain unchanged) ...
 package de.tum.cit.fop.maze;
 
 import com.badlogic.gdx.Gdx;
@@ -17,9 +15,8 @@ import de.tum.cit.fop.maze.world.Hud;
 
 public class GameScreen implements Screen {
 
-    // === NEW: Added infinite mode tracking variables ===
-    private boolean waitingForNextLevel = false; // 标记是否正在等待加载下一关
-    private float waitTimer = 0f; // 等待计时器
+    private boolean waitingForNextLevel = false;
+    private float waitTimer = 0f;
     private static final float WAIT_BEFORE_NEXT_LEVEL = 2.0f; // 等待时长（秒）
     private final String originalMapLevel; // 新增：存储原始 mapLevel
     // ====================================
@@ -45,6 +42,8 @@ public class GameScreen implements Screen {
     private Sound winScreenMusic;
     private Sound loseScreenMusic;
     private GameManager gameManager;
+    private boolean isGameOver = false;
+    private Texture endScreenTexture;
 
     // === NEW: Added flag for showing end screen and waiting for input ===
     private boolean showingEndScreen = false;
@@ -128,124 +127,102 @@ public class GameScreen implements Screen {
         updateCamera(); // Initial centering
     }
 
-    // === NEW: Added three-parameter constructor for compatibility ===
+
     public GameScreen(MazeRunnerGame game, String mapLevel, boolean ignoreSavedState) {
-        // Call the four-parameter constructor with mapLevel used for both original and current mapLevel
         this(game, mapLevel, ignoreSavedState, mapLevel);
     }
-    // ====================================
 
-    // ... (other methods remain unchanged until render) ...
 
-    @Override // Replace render method, adding logic to wait and load new level
     public void render(float delta) {
-        // === NEW: Handle waiting for next level in infinite mode ===
+        ScreenUtils.clear(0, 0, 0, 1);
+
         if (waitingForNextLevel) {
             waitTimer -= delta;
             if (waitTimer <= 0) {
-                loadNextInfiniteLevel(); // Load the new map
+                loadNextInfiniteLevel();
             }
-            // During waiting, clear the screen or show a loading prompt
-            ScreenUtils.clear(0, 0, 0, 1); // Clear to black
-            // Optional: Draw loading text
-            // game.getSpriteBatch().begin();
-            // font.draw(game.getSpriteBatch(), "Loading Next Level...", ...); // Need to define font and position
-            // game.getSpriteBatch().end();
-            return; // Skip regular rendering
-        }
-        // ====================================
-
-        // === NEW: Handle showing end screen and waiting for input ===
-        if (showingEndScreen && endScreenImagePath != null) {
-            showEndScreen(endScreenImagePath); // Just draw the end screen
-            // Check for user input to return to menu (e.g., ESC)
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.justTouched()) {
-                Gdx.app.log("GameScreen", "End screen dismissed by user input. Returning to menu.");
-                game.goToMenu(); // Go back to menu
-                return; // Important: Return early to avoid further rendering if needed
-            }
-            return; // Skip regular rendering while showing end screen
-        }
-        // ====================================
-
-        // ... (ESC handling remains unchanged) ...
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            pauseGame();
-            return; // Important: Return early after pausing
+            return;
         }
 
-        // ... (volume, zoom, camera, update, render calls remain unchanged) ...
-        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
-        int volUp = prefs.getInteger("key_volume_up", Input.Keys.PLUS);
-        int volDown = prefs.getInteger("key_volume_down", Input.Keys.MINUS);
-        if (Gdx.input.isKeyJustPressed(volUp)) {
-            float vol = Math.min(1.0f, backgroundMusic.getVolume() + 0.1f);
-            backgroundMusic.setVolume(vol);
-        }
-        if (Gdx.input.isKeyJustPressed(volDown)) {
-            float vol = Math.max(0.0f, backgroundMusic.getVolume() - 0.1f);
-            backgroundMusic.setVolume(vol);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.I)) camera.zoom -= 0.02f;
-        if (Gdx.input.isKeyPressed(Input.Keys.O)) camera.zoom += 0.02f;
-        if (camera.zoom < 1) camera.zoom = 1;
-        if (camera.zoom > 2) camera.zoom = 2;
-
-        ScreenUtils.clear(0, 0, 0, 1);
-        updateCamera();
-        gameManager.update(delta); // This call can trigger the NPE if exitArrow is null in GameManager
-        renderGameWorld(delta);
-
-        // === Update "Saved" notification (if applicable) ===
-        // ... (save notification logic remains unchanged) ...
-
-        // === NEW: Check win/lose state and trigger end screen display ===
-        // CRITICAL: Check the GameManager's state AFTER update()
-        if (gameManager.tryWin()) {
-            Gdx.app.log("GameScreen", "GameManager reports win. Showing Win Screen.");
-            // Only set the flag if not already showing an end screen
-            if (!showingEndScreen) {
-                showingEndScreen = true;
-                endScreenImagePath = "assets/images/victory.png";
-                // Stop background music when showing end screen (optional)
-                if (backgroundMusic != null) {
-                    backgroundMusic.stop(); // Or pause() depending on desired effect
-                }
-            }
-        }  if (gameManager.tryLose()){
-            Gdx.app.log("GameScreen", "GameManager reports lose. Showing Lose Screen.");
-            // Only set the flag if not already showing an end screen
-            if (!showingEndScreen) {
-                showingEndScreen = true;
-                endScreenImagePath = "assets/images/gameOver.png";
-                // Stop background music when showing end screen (optional)
-                if (backgroundMusic != null) {
-                    backgroundMusic.stop(); // Or pause() depending on desired effect
-                }
+        if (showingEndScreen) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                game.goToMenu(); // Geht zurück ins Hauptmenü
             }
         }
-        // ====================================
 
-        // Only render HUD if not showing the end screen
+        else {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                pauseGame();
+                return;
+            }
+            handleInputButtons();
+
+            updateCamera();
+            gameManager.update(delta);
+
+            if (gameManager.tryWin()) {
+                triggerEndScreen("assets/images/victory.png");
+            } else if (gameManager.tryLose()) {
+                triggerEndScreen("assets/images/gameOver.png");
+            }
+        }
+
         if (!showingEndScreen) {
+            game.getSpriteBatch().setProjectionMatrix(camera.combined);
+            renderGameWorld(delta);
+
             hud.update();
             hud.getStage().act(delta);
             hud.draw();
         }
+
+        if (showingEndScreen && endScreenTexture != null) {
+            game.getSpriteBatch().getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+            game.getSpriteBatch().begin();
+            game.getSpriteBatch().draw(endScreenTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            game.getSpriteBatch().end();
+
+            game.getSpriteBatch().setProjectionMatrix(camera.combined);
+        }
     }
 
-    // ... (resize, dispose, show, hide, pause, resume methods remain unchanged) ...
+    private void handleInputButtons() {
+        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+        int volUp = prefs.getInteger("key_volume_up", Input.Keys.PLUS);
+        int volDown = prefs.getInteger("key_volume_down", Input.Keys.MINUS);
+
+        if (Gdx.input.isKeyJustPressed(volUp)) {
+            backgroundMusic.setVolume(Math.min(1.0f, backgroundMusic.getVolume() + 0.1f));
+        }
+        if (Gdx.input.isKeyJustPressed(volDown)) {
+            backgroundMusic.setVolume(Math.max(0.0f, backgroundMusic.getVolume() - 0.1f));
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.I)) camera.zoom = Math.max(1f, camera.zoom - 0.02f);
+        if (Gdx.input.isKeyPressed(Input.Keys.O)) camera.zoom = Math.min(2f, camera.zoom + 0.02f);
+    }
+
+    private void triggerEndScreen(String path) {
+        if (!showingEndScreen) {
+            Gdx.app.log("GameScreen", "Show End Screen: " + path);
+            showingEndScreen = true;
+
+            if (endScreenTexture != null) endScreenTexture.dispose();
+            endScreenTexture = new Texture(Gdx.files.internal(path));
+
+            if (backgroundMusic != null) backgroundMusic.stop();
+        }
+    }
 
     @Override
     public void resize(int width, int height) {
-        // ... (existing resize code remains unchanged) ...
         camera.setToOrtho(false);
         aspectRatio = (float) width / (float) height;
         camera.viewportHeight = tileSize * tilesVisibleY;
         camera.viewportWidth = camera.viewportHeight * aspectRatio;
         camera.viewportWidth = Math.min(camera.viewportWidth, (gameMap.getWidth() - 2) * tileSize);
         camera.viewportHeight = Math.min(camera.viewportHeight, (gameMap.getHeight() - 2) * tileSize);
-        // Ensure HUD stage gets resized
+
         hud.getStage().getViewport().update(width, height, true);
     }
 
@@ -274,56 +251,22 @@ public class GameScreen implements Screen {
         // Initialization logic is usually done in the constructor
     }
 
-    // File: core/src/de/tum/cit/fop/maze/GameScreen.java
-// ... (其他部分保持不变) ...
-
-    // File: core/src/de/tum/cit/fop/maze/GameScreen.java
-// ... (other parts remain unchanged) ...
-
-// File: core/src/de/tum/cit/fop/maze/GameScreen.java
-
-    // File: core/src/de/tum/cit/fop/maze/GameScreen.java
-// ... (other parts remain unchanged) ...
-
-    // === SHOW END SCREEN: Fit image to screen, maintain aspect ratio, center it ===
     public void showEndScreen(String imagePath) {
-        Texture endScreenTexture = new Texture(Gdx.files.internal(imagePath));
+        Gdx.app.log("GameScreen", "Lade End Screen: " + imagePath);
 
-        // Get screen dimensions
-        float screenWidth = Gdx.graphics.getWidth();
-        float screenHeight = Gdx.graphics.getHeight();
+        showingEndScreen = true;
 
-        // Get image dimensions
-        float imageWidth = endScreenTexture.getWidth();
-        float imageHeight = endScreenTexture.getHeight();
 
-        // Calculate scale factor to fit image within the screen while maintaining aspect ratio
-        // This ensures the entire image is visible, even if one dimension is smaller than the screen
-        float scaleX = screenWidth / imageWidth;
-        float scaleY = screenHeight / imageHeight;
-        float scale = Math.min(scaleX, scaleY); // Take the smaller scale to ensure the whole image fits
+        if (endScreenTexture != null) {
+            endScreenTexture.dispose();
+        }
+        endScreenTexture = new Texture(Gdx.files.internal(imagePath));
 
-        // Calculate the scaled dimensions
-        float scaledWidth = imageWidth ;
-        float scaledHeight = imageHeight ;
-
-        // Calculate position to center the scaled image
-        float x = (screenWidth - scaledWidth) / 20f;
-        float y = (screenHeight - scaledHeight) / 20f;
-
-        game.getSpriteBatch().begin();
-        // Draw the texture with calculated scale and position
-        game.getSpriteBatch().draw(endScreenTexture, x, y, scaledWidth, scaledHeight);
-        game.getSpriteBatch().end();
-
-        // Dispose of the texture immediately after drawing to free memory if not cached elsewhere.
-        endScreenTexture.dispose(); // Add this to prevent memory leaks
+        if (backgroundMusic != null) {
+            backgroundMusic.stop();
+        }
     }
-// ====================================
 
-// ... (other parts remain unchanged) ...
-
-// ... (other parts remain unchanged) ...
 
     private void setupAudio() {
         if (backgroundMusic != null) {
@@ -349,7 +292,7 @@ public class GameScreen implements Screen {
         backgroundMusic.play();
 
         winScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gamewin.mp3"));
-        loseScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gameover.wav"));
+        loseScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gameover.mp3"));
         keySound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/key.mp3"));
         heartSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/heart.mp3"));
         boostSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/boostSpeed.mp3"));
@@ -376,13 +319,10 @@ public class GameScreen implements Screen {
     }
 
     private void pauseGame() {
-        // 1. 停止当前游戏的背景音乐 (使用 stop() 而不是 pause() 来避免叠加)
         if (backgroundMusic != null) {
-            backgroundMusic.stop(); // Changed from pause() to stop()
+            backgroundMusic.stop();
         }
-        // 2. 切换到暂停菜单屏幕
-        // 移除了 game.goToGame("MENU") 这一行，这是导致问题的关键
-        game.goToPause(); // 直接调用 goToPause
+        game.goToPause();
     }
 
     private void updateCamera() {
