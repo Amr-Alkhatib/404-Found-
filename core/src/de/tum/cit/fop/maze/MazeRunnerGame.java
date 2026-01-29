@@ -359,6 +359,9 @@ public class MazeRunnerGame extends Game {
     public Music getCurrentBackgroundMusic() {
         return currentBackgroundMusic;
     }
+    public void setCurrentBackgroundMusic(Music music) {
+        this.currentBackgroundMusic = music;
+    }
 
     public GameScreen getCurrentGameScreenInstance() {
         return gameScreen; //

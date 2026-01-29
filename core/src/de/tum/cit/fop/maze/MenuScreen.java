@@ -43,10 +43,13 @@ public class MenuScreen implements Screen {
         Viewport viewport = new ScreenViewport(camera);
         stage = new Stage(viewport, game.getSpriteBatch());
 
-
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/background.mp3"));
         menuMusic.setLooping(true);
-        menuMusic.setVolume(0.5f);
+        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+        float savedVolume = prefs.getFloat("music_volume", 0.5f);
+
+        game.setCurrentBackgroundMusic(menuMusic);
+        menuMusic.setVolume(savedVolume);
         menuMusic.play();
 
 

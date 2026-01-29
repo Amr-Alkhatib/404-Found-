@@ -68,7 +68,14 @@ public class PauseMenuScreen implements Screen {
 
         pauseMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/pause.mp3"));
         pauseMusic.setLooping(true);
-        pauseMusic.setVolume(0.5f);
+
+        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+        float savedVolume = prefs.getFloat("music_volume", 0.5f);
+        pauseMusic.setVolume(savedVolume);
+
+        game.setCurrentBackgroundMusic(pauseMusic);
+
+        pauseMusic.play();
 
         Table table = new Table();
         table.setFillParent(true);

@@ -12,31 +12,24 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-/**
- * Settings screen for adjusting game options like volume, fullscreen mode, and key bindings.
- */
 public class SettingsScreen implements Screen {
 
     private final MazeRunnerGame game;
     private Stage stage;
     private Texture backgroundTexture;
 
-
     private Slider musicSlider;
     private Slider sfxSlider;
     private CheckBox fullscreenCheckBox;
 
-    private Label upKeyLabel;
-    private Label downKeyLabel;
-    private Label leftKeyLabel;
-    private Label rightKeyLabel;
-    private Label actionKeyLabel;
-    private Label sprintKeyLabel;
+    private Label upKeyLabel, downKeyLabel, leftKeyLabel, rightKeyLabel, actionKeyLabel, sprintKeyLabel;
 
-    // Preferences keys
+    // Keys für die Speicher-Datei (Preferences)
     private static final String PREF_MUSIC_VOLUME = "music_volume";
     private static final String PREF_SFX_VOLUME = "sfx_volume";
     private static final String PREF_FULLSCREEN = "fullscreen";
+
+    // Keys für Tastenbelegung
     private static final String PREF_KEY_UP = "key_up";
     private static final String PREF_KEY_DOWN = "key_down";
     private static final String PREF_KEY_LEFT = "key_left";
@@ -44,9 +37,7 @@ public class SettingsScreen implements Screen {
     private static final String PREF_KEY_ACTION = "key_action";
     private static final String PREF_KEY_SPRINT = "key_sprint";
 
-
     private String currentBinding = null;
-
     private InputMultiplexer inputMultiplexer;
 
     public SettingsScreen(MazeRunnerGame game) {
@@ -54,8 +45,9 @@ public class SettingsScreen implements Screen {
         this.stage = new Stage(new ScreenViewport());
         this.backgroundTexture = new Texture(Gdx.files.internal("assets/images/2.png"));
 
+        // 1. Gespeicherte Werte laden (Standardwerte falls noch nichts gespeichert ist)
         var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
-        float savedMusic = prefs.getFloat(PREF_MUSIC_VOLUME, 0.7f);
+        float savedMusic = prefs.getFloat(PREF_MUSIC_VOLUME, 0.5f);
         float savedSfx = prefs.getFloat(PREF_SFX_VOLUME, 0.5f);
         boolean savedFullscreen = prefs.getBoolean(PREF_FULLSCREEN, false);
 
@@ -64,8 +56,7 @@ public class SettingsScreen implements Screen {
         int keyLeft = prefs.getInteger(PREF_KEY_LEFT, Input.Keys.A);
         int keyRight = prefs.getInteger(PREF_KEY_RIGHT, Input.Keys.D);
         int keyAction = prefs.getInteger(PREF_KEY_ACTION, Input.Keys.SPACE);
-        int keySprint = prefs.getInteger(PREF_KEY_SPRINT, Input.Keys.SHIFT_LEFT); // ← 默认为左 Shift
-
+        int keySprint = prefs.getInteger(PREF_KEY_SPRINT, Input.Keys.SHIFT_LEFT);
 
         Table table = new Table();
         table.setFillParent(true);
@@ -73,44 +64,74 @@ public class SettingsScreen implements Screen {
 
         table.add(new Label("Settings", game.getSkin(), "title")).padBottom(40).row();
 
-
+        // --- MUSIC SLIDER ---
         table.add(new Label("Music Volume:", game.getSkin())).left().padRight(20);
         musicSlider = new Slider(0f, 1f, 0.01f, false, game.getSkin());
-        musicSlider.setValue(savedMusic);
+        musicSlider.setValue(savedMusic); // Regler auf gespeicherte Position setzen
+
+        // WICHTIG: Der Listener speichert sofort, wenn du schiebst
         musicSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                float newVol = musicSlider.getValue();
+
+                // A) Sofort speichern
+                var p = Gdx.app.getPreferences("MazeRunnerPrefs");
+                p.putFloat(PREF_MUSIC_VOLUME, newVol);
+                p.flush(); // Schreibt auf die Festplatte
+
+                // B) Laufende Musik direkt anpassen (Live-Effekt)
                 if (game.getCurrentBackgroundMusic() != null) {
-                    game.getCurrentBackgroundMusic().setVolume(musicSlider.getValue());
+                    game.getCurrentBackgroundMusic().setVolume(newVol);
+                }
+
+                // Falls du im MenuScreen bist und dort Musik läuft:
+                if (game.getScreen() instanceof MenuScreen) {
+                    // Annahme: MenuScreen hat eine getMenuMusic() Methode oder wir greifen später drauf zu
+                    // Wenn MenuScreen Musik über game.getCurrentBackgroundMusic() regelt, reicht der Code oben!
                 }
             }
         });
         table.add(musicSlider).width(200).padBottom(15).row();
 
 
+        // --- SFX (SOUND) SLIDER ---
         table.add(new Label("Sound Effects:", game.getSkin())).left().padRight(20);
         sfxSlider = new Slider(0f, 1f, 0.01f, false, game.getSkin());
         sfxSlider.setValue(savedSfx);
+
+        sfxSlider.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                float newVol = sfxSlider.getValue();
+
+                // A) Sofort speichern
+                var p = Gdx.app.getPreferences("MazeRunnerPrefs");
+                p.putFloat(PREF_SFX_VOLUME, newVol);
+                p.flush();
+
+                // Sounds sind kurz, wir müssen hier nichts live ändern.
+                // Das Spiel liest den neuen Wert beim nächsten "Pling" automatisch.
+            }
+        });
         table.add(sfxSlider).width(200).padBottom(25).row();
 
 
+        // --- FULLSCREEN ---
         fullscreenCheckBox = new CheckBox("Fullscreen Mode", game.getSkin());
         fullscreenCheckBox.setChecked(savedFullscreen);
         table.add(fullscreenCheckBox).colspan(2).left().padBottom(30).row();
 
-
+        // --- TASTENBELEGUNG (UI) ---
         table.add(new Label("Key Bindings:", game.getSkin(), "bold")).colspan(2).left().padTop(20).padBottom(15).row();
-
 
         table.add(new Label("Move Up:", game.getSkin())).left().padRight(20);
         upKeyLabel = createKeyLabel(keyUp);
         table.add(upKeyLabel).left().padBottom(8).row();
 
-
         table.add(new Label("Move Down:", game.getSkin())).left().padRight(20);
         downKeyLabel = createKeyLabel(keyDown);
         table.add(downKeyLabel).left().padBottom(8).row();
-
 
         table.add(new Label("Move Left:", game.getSkin())).left().padRight(20);
         leftKeyLabel = createKeyLabel(keyLeft);
@@ -128,17 +149,19 @@ public class SettingsScreen implements Screen {
         sprintKeyLabel = createKeyLabel(keySprint);
         table.add(sprintKeyLabel).left().padBottom(20).row();
 
+        // --- BACK BUTTON ---
         TextButton backButton = new TextButton("Back to Menu", game.getSkin());
         backButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                saveAndApplySettings();
+                saveAndApplySettings(); // Speichert Keys & Fullscreen final ab
                 game.goToMenu();
             }
         });
         table.add(backButton).colspan(2).padTop(20);
     }
 
+    // Hilfsmethode für die Tasten-Labels
     private Label createKeyLabel(int keycode) {
         Label label = new Label(Input.Keys.toString(keycode), game.getSkin());
         label.setTouchable(Touchable.enabled);
@@ -158,14 +181,16 @@ public class SettingsScreen implements Screen {
         if (label == leftKeyLabel) return "left";
         if (label == rightKeyLabel) return "right";
         if (label == actionKeyLabel) return "action";
-        if (label == sprintKeyLabel) return "sprint"; // ← 新增
+        if (label == sprintKeyLabel) return "sprint";
         return "";
     }
 
     private void saveAndApplySettings() {
         var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+        // Musik/SFX speichern wir schon live, aber zur Sicherheit hier nochmal
         prefs.putFloat(PREF_MUSIC_VOLUME, musicSlider.getValue());
         prefs.putFloat(PREF_SFX_VOLUME, sfxSlider.getValue());
+
         prefs.putBoolean(PREF_FULLSCREEN, fullscreenCheckBox.isChecked());
 
         if (fullscreenCheckBox.isChecked()) {
@@ -174,45 +199,24 @@ public class SettingsScreen implements Screen {
             Gdx.graphics.setWindowedMode(1280, 720);
         }
 
-        if (game.getCurrentBackgroundMusic() != null) {
-            game.getCurrentBackgroundMusic().setVolume(musicSlider.getValue());
-        }
-
         prefs.flush();
     }
 
     @Override
     public void show() {
+        // Input Processor für Tastenbelegung
         InputAdapter keyBindingListener = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
                 if (currentBinding != null) {
                     var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
                     switch (currentBinding) {
-                        case "up" -> {
-                            prefs.putInteger(PREF_KEY_UP, keycode);
-                            upKeyLabel.setText(Input.Keys.toString(keycode));
-                        }
-                        case "down" -> {
-                            prefs.putInteger(PREF_KEY_DOWN, keycode);
-                            downKeyLabel.setText(Input.Keys.toString(keycode));
-                        }
-                        case "left" -> {
-                            prefs.putInteger(PREF_KEY_LEFT, keycode);
-                            leftKeyLabel.setText(Input.Keys.toString(keycode));
-                        }
-                        case "right" -> {
-                            prefs.putInteger(PREF_KEY_RIGHT, keycode);
-                            rightKeyLabel.setText(Input.Keys.toString(keycode));
-                        }
-                        case "action" -> {
-                            prefs.putInteger(PREF_KEY_ACTION, keycode);
-                            actionKeyLabel.setText(Input.Keys.toString(keycode));
-                        }
-                        case "sprint" -> { // ← 新增
-                            prefs.putInteger(PREF_KEY_SPRINT, keycode);
-                            sprintKeyLabel.setText(Input.Keys.toString(keycode));
-                        }
+                        case "up" -> { prefs.putInteger(PREF_KEY_UP, keycode); upKeyLabel.setText(Input.Keys.toString(keycode)); }
+                        case "down" -> { prefs.putInteger(PREF_KEY_DOWN, keycode); downKeyLabel.setText(Input.Keys.toString(keycode)); }
+                        case "left" -> { prefs.putInteger(PREF_KEY_LEFT, keycode); leftKeyLabel.setText(Input.Keys.toString(keycode)); }
+                        case "right" -> { prefs.putInteger(PREF_KEY_RIGHT, keycode); rightKeyLabel.setText(Input.Keys.toString(keycode)); }
+                        case "action" -> { prefs.putInteger(PREF_KEY_ACTION, keycode); actionKeyLabel.setText(Input.Keys.toString(keycode)); }
+                        case "sprint" -> { prefs.putInteger(PREF_KEY_SPRINT, keycode); sprintKeyLabel.setText(Input.Keys.toString(keycode)); }
                     }
                     prefs.flush();
                     currentBinding = null;
@@ -225,18 +229,15 @@ public class SettingsScreen implements Screen {
         inputMultiplexer = new InputMultiplexer();
         inputMultiplexer.addProcessor(keyBindingListener);
         inputMultiplexer.addProcessor(stage);
-
         Gdx.input.setInputProcessor(inputMultiplexer);
     }
 
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
         game.getSpriteBatch().begin();
         game.getSpriteBatch().draw(backgroundTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         game.getSpriteBatch().end();
-
         stage.act(delta);
         stage.draw();
     }
@@ -245,20 +246,10 @@ public class SettingsScreen implements Screen {
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
     }
-
-    @Override
-    public void pause() {}
-
-    @Override
-    public void resume() {}
-
-    @Override
-    public void hide() {
-        Gdx.input.setInputProcessor(null);
-    }
-
-    @Override
-    public void dispose() {
+    @Override public void pause() {}
+    @Override public void resume() {}
+    @Override public void hide() { Gdx.input.setInputProcessor(null); }
+    @Override public void dispose() {
         if (stage != null) stage.dispose();
         if (backgroundTexture != null) backgroundTexture.dispose();
     }

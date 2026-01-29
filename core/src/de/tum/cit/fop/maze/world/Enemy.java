@@ -125,7 +125,12 @@ public class Enemy extends Obstacle {
         }
 
         if (!proximitySoundPlayed) {
-            Gdx.audio.newSound(Gdx.files.internal("assets/sounds/enemy.mp3")).play();
+            com.badlogic.gdx.audio.Sound sound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/enemy.mp3"));
+
+            float sfxVolume = Gdx.app.getPreferences("MazeRunnerPrefs").getFloat("sfx_volume", 0.5f);
+
+            sound.play(sfxVolume);
+
             proximitySoundPlayed = true;
         }
 

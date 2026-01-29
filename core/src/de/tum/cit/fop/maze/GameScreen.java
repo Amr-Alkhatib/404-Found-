@@ -241,6 +241,16 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
+        if (backgroundMusic != null) {
+            game.setCurrentBackgroundMusic(backgroundMusic);
+
+            var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+            backgroundMusic.setVolume(prefs.getFloat("music_volume", 0.5f));
+
+            if (!backgroundMusic.isPlaying()) {
+                backgroundMusic.play();
+            }
+        }
     }
 
     public void showEndScreen(String imagePath) {
@@ -264,9 +274,10 @@ public class GameScreen implements Screen {
             backgroundMusic.stop();
             backgroundMusic.dispose();
         }
+
         switch (mapLevel) {
             case "maps/level-1.properties":
-                backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/level4.mp3"));
+                backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/level1.mp3"));
                 break;
             case "maps/level-2.properties":
                 backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/level2.mp3"));
@@ -278,7 +289,10 @@ public class GameScreen implements Screen {
                 backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/level3.mp3"));
                 break;
         }
-        backgroundMusic.setVolume(0.5f);
+        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+        float savedMusicVolume = prefs.getFloat("music_volume", 0.5f);
+
+        backgroundMusic.setVolume(savedMusicVolume);
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
@@ -306,9 +320,14 @@ public class GameScreen implements Screen {
             case "trap2" -> trapSound2;
             default -> null;
         };
-        if (sound != null) sound.play();
-    }
 
+        if (sound != null) {
+            var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+            float sfxVolume = prefs.getFloat("sfx_volume", 0.5f);
+
+            sound.play(sfxVolume);
+        }
+    }
     private void pauseGame() {
         if (backgroundMusic != null) {
             backgroundMusic.stop();
