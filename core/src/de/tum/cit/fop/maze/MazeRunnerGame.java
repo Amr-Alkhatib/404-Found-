@@ -383,4 +383,24 @@ public class MazeRunnerGame extends Game {
         }
         return infiniteModeScores;
     }
+
+    public void goToGame(String mapLevel, boolean loadSave) {
+        // 1. Alten Screen aufräumen
+        if (gameScreen != null) {
+            gameScreen.dispose();
+        }
+
+        // 2. WICHTIG: In die Variable 'gameScreen' speichern!
+        // Damit goToPause() später weiß, wer das Spiel ist.
+        this.gameScreen = new GameScreen(this, mapLevel, loadSave);
+
+        // 3. Musik-Referenz aktualisieren (damit Pause-Musik funktioniert)
+        this.currentBackgroundMusic = gameScreen.getBackgroundMusic();
+
+        // 4. Screen setzen
+        setScreen(gameScreen);
+
+        // 5. Andere Screens schließen
+        cleanupOtherScreens();
+    }
 }

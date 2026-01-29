@@ -122,11 +122,19 @@ public class MenuScreen implements Screen {
         loadGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                GameState loadedState = SaveSystem.loadGame();
-                if (loadedState != null) {
-                    game.goToGame(loadedState);
+                // 1. NEU: Wir prüfen über das neue System, ob ein Spielstand existiert
+                if (SaveSystem.hasSaveGame()) {
+
+                    // 2. Wir holen uns den Namen des Levels, in dem wir waren
+                    // (Falls keiner gespeichert ist, nehmen wir level-1 als Sicherheit)
+                    String levelToLoad = SaveSystem.getGameSave().getString("currentLevel", "maps/level-1.properties");
+
+                    // 3. WICHTIG: Wir rufen goToGame mit 'true' auf!
+                    // Das sagt dem GameScreen: "Bitte sofort nach dem Start die Herzen & Position laden!"
+                    game.goToGame(levelToLoad, true);
+
                 } else {
-                    System.out.println("Failed to load game. No save file found or loading error.");
+                    System.out.println("Failed to load game. No save found.");
                 }
             }
         });

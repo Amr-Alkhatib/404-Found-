@@ -22,11 +22,13 @@ import com.badlogic.gdx.utils.viewport.Viewport;
  */
 public class PauseMenuScreen implements Screen {
 
+    private final MazeRunnerGame game;
+    private final GameScreen gameScreen;
+    private final Stage stage;
+    private Music pauseMusic;
+
     /**
      * Constructor for the {@code PauseScreen}.
-     *
-     * @param game       The main game class.
-     * @param gameScreen The GameScreen to return to when resuming the game.
      */
     public PauseMenuScreen(MazeRunnerGame game, GameScreen gameScreen) {
         this.game = game;
@@ -39,33 +41,11 @@ public class PauseMenuScreen implements Screen {
         setUpMenu();
     }
 
-
-    /**
-     * The game the menu belongs to.
-     */
-    private final MazeRunnerGame game;
-
-    /**
-     * Reference to the current GameScreen
-     */
-    private final GameScreen gameScreen;
-
-    /**
-     * The stage to be rendered.
-     */
-    private final Stage stage;
-
-    /**
-     * The music to be played.
-     */
-    private Music pauseMusic;
-
-
     /**
      * Sets up the pause menu UI.
      */
     private void setUpMenu() {
-
+        // Musik laden
         pauseMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/pause.mp3"));
         pauseMusic.setLooping(true);
 
@@ -74,9 +54,9 @@ public class PauseMenuScreen implements Screen {
         pauseMusic.setVolume(savedVolume);
 
         game.setCurrentBackgroundMusic(pauseMusic);
-
         pauseMusic.play();
 
+        // UI Aufbauen
         Table table = new Table();
         table.setFillParent(true);
         table.center();
@@ -88,10 +68,13 @@ public class PauseMenuScreen implements Screen {
         Label titleLabel = new Label("Pause Menu", game.getSkin(), "title");
         table.add(titleLabel).padBottom(80).row();
 
+        // --- BUTTONS ---
+
         TextButton continueButton = new TextButton("Continue", game.getSkin());
         continueButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                // Hier geht es zurück ins Spiel!
                 pauseMusic.dispose();
                 game.setScreen(gameScreen);
                 gameScreen.resume();
@@ -120,10 +103,8 @@ public class PauseMenuScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 game.goToMap(true);
                 pauseMusic.dispose();
-
             }
         });
-
         table.add(selectNewMap).width(300).pad(10).row();
 
         TextButton mainMenuButton = new TextButton("Exit", game.getSkin());
@@ -138,17 +119,15 @@ public class PauseMenuScreen implements Screen {
         table.add(mainMenuButton).width(300).pad(10).row();
     }
 
-    /**
-     * Plays the pause music.
-     */
     public void setPauseMusic() {
         pauseMusic.play();
     }
 
-
     @Override
     public void show() {
+        // WICHTIG: Input auf Stage setzen, damit Buttons klickbar sind
         Gdx.input.setInputProcessor(stage);
+
         if (!pauseMusic.isPlaying()) {
             pauseMusic.play();
         }
@@ -157,8 +136,13 @@ public class PauseMenuScreen implements Screen {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // UI berechnen und zeichnen
         stage.act(delta);
         stage.draw();
+
+        // HIER IST JETZT KEINE ESC-ABFRAGE MEHR!
+        // Das Menü bleibt stabil offen, bis du "Continue" klickst.
     }
 
     @Override
@@ -183,7 +167,9 @@ public class PauseMenuScreen implements Screen {
     @Override
     public void dispose() {
         stage.dispose();
-        pauseMusic.stop();
-        pauseMusic.dispose();
+        if (pauseMusic != null) {
+            pauseMusic.stop();
+            pauseMusic.dispose();
+        }
     }
 }

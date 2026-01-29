@@ -108,26 +108,10 @@ public class SelectMapScreen implements Screen {
         return new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (calledFromPause) {
-                    GameState loadedState = SaveSystem.loadGame();
-
-                    if (loadedState != null) {
-                        if (mapFile.equals(loadedState.getMapFile())) {
-                            System.out.println("Loading saved game for: " + mapFile);
-                            game.goToGame(loadedState);
-                        } else {
-                            System.out.println("Saved game is for a different map (" +
-                                    loadedState.getMapFile() + "). Starting new game for: " + mapFile);
-                            game.goToGame(mapFile);
-                        }
-                    } else {
-                        System.out.println("No save file found. Starting new game for: " + mapFile);
-                        game.goToGame(mapFile);
-                    }
-                } else {
-                    System.out.println("Starting new game from main menu for: " + mapFile);
-                    game.goToGame(mapFile);
-                }
+                // Ganz einfach: Wenn man auf den Button klickt, startet das Level.
+                // false = Wir starten frisch (nicht laden).
+                // Wer laden will, benutzt den "Load Game" Button im Hauptmenü.
+                game.goToGame(mapFile, false);
             }
         };
     }
