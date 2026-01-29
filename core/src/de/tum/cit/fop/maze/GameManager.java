@@ -14,7 +14,9 @@ public class GameManager {
     private boolean isInfiniteMode = false;
     private int totalHeartsCollected = 0;
     private int totalEnemiesKilled = 0;
-
+    // 在 GameManager 类中添加两个变量
+    private int totalHeartsCollectedThisSession;
+    private int totalEnemiesKilledThisSession;
     private final GameMap gameMap;
     private final GameScreen gameScreen;
     private final MazeRunnerGame game;
@@ -342,6 +344,22 @@ public class GameManager {
             handleHeartCollection();
             handleBoostCollection();
         }
+        handleObstacleInteractions();  // 保证生命值更新在失败检测前
+
+        // ✅ 【关键修复】添加日志，确认失败检测
+        boolean winResult = tryWin();
+        boolean loseResult = tryLose();
+        System.out.println("Win check: " + winResult + ", Lose check: " + loseResult);
+        player.update(delta, walls);
+        exitArrow.update(player.getX(), player.getY(), exits);
+        tryLockEntrance();
+        tryUnlockExits();
+
+        enemies.forEach(e -> e.update(delta, walls, player));
+        traps.forEach(t -> t.update(delta));
+        handleKeyCollection();
+        handleHeartCollection();
+        handleBoostCollection();
 
         boolean onMorphTrap = false;
         float px = player.getX();
@@ -371,23 +389,28 @@ public class GameManager {
         }
     }
 
+    // 在 GameManager 类中添加
+    public boolean isInfiniteMode() {
+        return game.getIsInfiniteMode();
+    }
 
-    private void winGame() {
+    public void winGame() {
         if (!win) {
             gameScreen.playSound("winscreen");
             win = true;
             canSaveOrLoad = false;
+            int levelScore = calculateFinalScore();
 
-            int levelScore = game.getTotalScore();
-            game.addToTotalScore(levelScore);
-            Gdx.app.log("GameManager", "Level completed! Score added: " + levelScore + " (Hearts: " + totalHeartsCollected + ", Enemies: " + totalEnemiesKilled + ")");
-
-            if (isInfiniteMode) {
+            // ✅ 修复: 确保调用正确的方法
+            if (isInfiniteMode()) {
+                game.addInfiniteModeScore(levelScore);
                 gameScreen.onInfiniteModeLevelComplete();
                 return;
             }
+
+            Gdx.app.log("GameManager", "Level completed! Score added: " + levelScore + " (Hearts: " + totalHeartsCollectedThisSession + ", Enemies: " + totalEnemiesKilledThisSession + ")");
+            gameScreen.showEndScreen("assets/images/victory.png");
         }
-        gameScreen.showEndScreen("assets/images/victory.png");
     }
 
     /**
@@ -534,18 +557,40 @@ public class GameManager {
     }
 
     public boolean tryWin() {
+        if (win) return true;
+
+        // ✅ 修复：正确检查玩家是否到达了出口
         for (Exit exit : exits) {
-            if (!exit.isLocked() && GameHelper.isAtCoordinate(player.getX(), player.getY(), List.of(exit))) {
-                winGame();
-                return false;
+            if (Math.abs(player.getX() - exit.getX()) < 0.1f &&
+                    Math.abs(player.getY() - exit.getY()) < 0.1f) {
+                win = true;
+                return true;
             }
         }
+
         return false;
     }
+    public boolean isLose() {
+        return lose;
+    }
+
+    public boolean isWin() {
+        return win;
+    }
+    // 在 GameManager.java 中添加 resetAfterLevelTransition 方法
 
     public boolean tryLose() {
-        if (!player.hasHearts()) {
-            gameOver();
+        // ✅ 添加关键日志，确认失败检测
+        System.out.println("Lose check: Hearts = " + player.getHeartsCollected() +
+                " (Max Hearts: " + player.getMaxHearts() + ")");
+
+        if (lose) return true;
+
+        // ✅ 确保检查的是当前生命值
+        if (player.getHeartsCollected() <= 0) {
+            lose = true;
+            System.out.println("Lose triggered! Hearts = " + player.getHeartsCollected());
+            return true;
         }
         return false;
     }

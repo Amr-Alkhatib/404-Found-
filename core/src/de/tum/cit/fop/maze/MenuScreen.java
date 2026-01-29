@@ -84,6 +84,7 @@ public class MenuScreen implements Screen {
         titleGroup.addActor(dotImage);
         mainTable.add(titleGroup).padBottom(-80).row();
 
+        // 在 MenuScreen.java 中确保使用正确的总分数
         Label totalScoreLabel = new Label("Total Score: " + game.getTotalScore(), game.getSkin());
         totalScoreLabel.setFontScale(1.5f);
         totalScoreLabel.setColor(com.badlogic.gdx.graphics.Color.WHITE);
@@ -150,7 +151,16 @@ public class MenuScreen implements Screen {
             }
         });
         mainTable.add(settingsButton).width(300).height(60).pad(5).row();
-
+        TextButton leaderboardButton = new TextButton("High Scores", customButtonStyle);
+        leaderboardButton.padBottom(19);
+        leaderboardButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new LeaderboardScreen(game));
+            }
+        });
+        mainTable.add(leaderboardButton).width(300).height(60).pad(5).row();
+// --- 结束添加 ---
         TextButton credits = new TextButton("Acknowledgments", customButtonStyle);
         credits.padBottom(19);
         credits.addListener(new ChangeListener() {

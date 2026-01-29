@@ -12,6 +12,11 @@ import de.tum.cit.fop.maze.world.GameMap;
 import de.tum.cit.fop.maze.world.TextureManager;
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+
 /**
  * The MazeRunnerGame class represents the core of the Maze Runner game.
  * It manages screens, global resources like SpriteBatch, and the game world.
@@ -27,7 +32,7 @@ public class MazeRunnerGame extends Game {
     private PauseMenuScreen pauseMenuScreen;
     private SelectMapScreen selectMapScreen;
 
-
+    private List<Integer> infiniteModeScores = new ArrayList<Integer>(); // 确保初始化
     private SpriteBatch spriteBatch;
     private TextureManager textureManager;
     private Skin skin;
@@ -42,27 +47,33 @@ public class MazeRunnerGame extends Game {
 
     private boolean isInfiniteMode = false;
     private int currentInfiniteLevel = 0;
+    private int totalScore = 0;
 
     /**
      * Constructor for MazeRunnerGame.
      *
      * @param fileChooser The file chooser for the game, typically used in desktop environments.
      */
-    private int totalScore = 0;
-    public void addToTotalScore(int points) {
-        totalScore += points;
-        SaveSystem.saveTotalScore(totalScore);
-    }
-    public int getTotalScore() { return totalScore; }
+
+
+        // ✅ 修复2: 在构造函数中正确赋值
+
 
     public MazeRunnerGame(NativeFileChooser fileChooser) {
         super();
         this.fileChooser = fileChooser;
+        // ✅ 确保在构造函数中初始化，但不要调用 SaveSystem
     }
 
-    /**
-     * Called when the game is created. Initializes resources, music, and sets the menu screen.
-     */
+    // ✅ 确保加载分数
+    public void loadInfiniteModeScores() {
+        this.infiniteModeScores = SaveSystem.loadInfiniteModeScores();
+    }
+
+    // 在 MazeRunnerGame.java 中确保 totalScore 被正确初始化
+    // ✅ 修复：确保在构造函数中初始化
+
+    // 在 MazeRunnerGame.java 的 create() 方法中
     @Override
     public void create() {
         spriteBatch = new SpriteBatch();
@@ -71,8 +82,25 @@ public class MazeRunnerGame extends Game {
         viewport.apply();
         textureManager = new TextureManager();
 
+        // ✅ 修复：加载总分数
+        this.totalScore = SaveSystem.loadTotalScore();
+
+        loadInfiniteModeScores();
         goToMenu();
     }
+    public void addInfiniteModeScore(int score) {
+        if (infiniteModeScores == null) {
+            infiniteModeScores = new ArrayList<Integer>();
+        }
+        infiniteModeScores.add(score);
+        Collections.sort(infiniteModeScores, Collections.reverseOrder());
+
+        // ✅ 确保分数被正确保存
+        SaveSystem.saveInfiniteModeScores(infiniteModeScores);
+    }
+    /**
+     * Called when the game is created. Initializes resources, music, and sets the menu screen.
+     */
 
     /**
      * Switches to the menu screen.
@@ -143,34 +171,28 @@ public class MazeRunnerGame extends Game {
      */
     public void startInfiniteMode() {
         System.out.println("MazeRunnerGame: Starting Infinite Mode...");
-
         this.isInfiniteMode = true;
         this.currentInfiniteLevel = 1;
-
         int width = 20;
         int height = 20;
         int numTraps = 10;
         int numEnemies = 2;
         int numMorphTraps = 3;
-
-
         String generatedMapPath = InfiniteMapGenerator.generateInfiniteMap(
                 width, height, numTraps, numEnemies, numMorphTraps);
-
         if (generatedMapPath == null) {
             System.err.println("Failed to generate initial infinite map. Aborting startInfiniteMode.");
             return;
         }
-
         System.out.println("MazeRunnerGame: Generated first map for infinite mode: " + generatedMapPath);
 
-
-        GameScreen newGameScreen = new GameScreen(this, generatedMapPath, true /* ignoreSavedState, also implies infinite mode if needed internally */);
+        // ✅ 修复：传递 "INFINITE_MODE" 而不是 generatedMapPath
+        GameScreen newGameScreen = new GameScreen(this, "INFINITE_MODE", true /* ignoreSavedState */);
         this.gameScreen = newGameScreen;
         this.setScreen(gameScreen);
-
         cleanupOtherScreens();
     }
+
 
     /**
      * Called by GameScreen when an infinite mode level is completed successfully.
@@ -229,6 +251,12 @@ public class MazeRunnerGame extends Game {
     public boolean getIsInfiniteMode() {
         return this.isInfiniteMode;
     }
+    // 在 MazeRunnerGame.java 中添加以下方法
+
+
+    // 在 MazeRunnerGame.java 中添加以下方法
+
+
 
     /**
      * Getter for the current infinite mode level number.
@@ -333,6 +361,23 @@ public class MazeRunnerGame extends Game {
     }
 
     public GameScreen getCurrentGameScreenInstance() {
-        return gameScreen; // Return the member variable
+        return gameScreen; //
+        // Return the member variable
+
+    }public int getTotalScore() {
+        return this.totalScore;
+
+    }
+    public void addTotalScore(int score) {
+        this.totalScore += score;
+        SaveSystem.saveTotalScore(this.totalScore);
+    }
+
+    // 添加 getter 方法（必须！）
+    public List<Integer> getInfiniteModeScores() {
+        if (infiniteModeScores == null) {
+            infiniteModeScores = new ArrayList<>();
+        }
+        return infiniteModeScores;
     }
 }

@@ -117,87 +117,100 @@ public class GameScreen implements Screen {
     }
 
 
+    // 替换整个 render() 方法
+    @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
 
+        // 处理等待下一关逻辑
         if (waitingForNextLevel) {
             waitTimer -= delta;
+            System.out.println("Waiting for next level: " + waitTimer + "s");
+
             if (waitTimer <= 0) {
+                System.out.println("✅ Waiting time elapsed, loading next level");
+                waitingForNextLevel = false;
                 loadNextInfiniteLevel();
+            }
+
+            // 仍需渲染当前画面
+            if (!showingEndScreen) {
+                game.getSpriteBatch().setProjectionMatrix(camera.combined);
+                renderGameWorld(delta);
+                hud.update();
+                hud.getStage().act(delta);
+                hud.draw();
             }
             return;
         }
 
+        // 处理结束屏幕
         if (showingEndScreen) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
                 game.goToMenu();
             }
+            if (endScreenTexture != null) {
+                game.getSpriteBatch().getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                game.getSpriteBatch().begin();
+                game.getSpriteBatch().draw(endScreenTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                game.getSpriteBatch().end();
+                game.getSpriteBatch().setProjectionMatrix(camera.combined);
+            }
+            return;
         }
 
-        else {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-                pauseGame();
-                return;
+        // 处理 ESC 暂停
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            pauseGame();
+            return;
+        }
+
+        updateCamera();
+
+        // 更新游戏逻辑
+        gameManager.update(delta);
+
+        // 检查输赢状态
+        if (gameManager.isLose() && !showingEndScreen) {
+            // ✅ 修复：确保在无限模式下记录分数
+            if ("INFINITE_MODE".equals(originalMapLevel)) {
+                int score = (int) gameManager.getTimePlayed();
+                System.out.println("[SCORE RECORD] Game over! Recording score: " + score);
+
+                // ✅ 修复：确保分数被正确保存
+                game.addInfiniteModeScore(score);
+
+                System.out.println("[SCORE RECORD] Score added to leaderboard: " + score);
             }
-            handleInputButtons();
 
-            updateCamera();
-            gameManager.update(delta);
+            // 显示失败画面
+            showEndScreen("assets/images/gameOver.png");
+        } else if (gameManager.isWin() && !showingEndScreen) {
+            if ("INFINITE_MODE".equals(originalMapLevel)) {
+                // ✅ 修复：不显示胜利弹窗，而是等待两秒后自动进入下一关
+                waitingForNextLevel = true;
+                waitTimer = WAIT_BEFORE_NEXT_LEVEL; // 2.0f
+                System.out.println("✅ Victory! Waiting " + WAIT_BEFORE_NEXT_LEVEL + " seconds for next level");
 
-            if (gameManager.tryWin()) {
-                triggerEndScreen("assets/images/victory.png");
-            } else if (gameManager.tryLose()) {
-                triggerEndScreen("assets/images/gameOver.png");
+                // 播放胜利音效
+                if (winScreenMusic != null) {
+                    winScreenMusic.play();
+                }
+            } else {
+                // 非无限模式：显示胜利画面
+                showEndScreen("assets/images/win.png");
             }
         }
 
-        if (!showingEndScreen) {
+        // 正常渲染
+        if (!showingEndScreen && !waitingForNextLevel) {
             game.getSpriteBatch().setProjectionMatrix(camera.combined);
             renderGameWorld(delta);
-
             hud.update();
             hud.getStage().act(delta);
             hud.draw();
         }
-
-        if (showingEndScreen && endScreenTexture != null) {
-            game.getSpriteBatch().getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
-            game.getSpriteBatch().begin();
-            game.getSpriteBatch().draw(endScreenTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-            game.getSpriteBatch().end();
-
-            game.getSpriteBatch().setProjectionMatrix(camera.combined);
-        }
     }
-
-    private void handleInputButtons() {
-        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
-        int volUp = prefs.getInteger("key_volume_up", Input.Keys.PLUS);
-        int volDown = prefs.getInteger("key_volume_down", Input.Keys.MINUS);
-
-        if (Gdx.input.isKeyJustPressed(volUp)) {
-            backgroundMusic.setVolume(Math.min(1.0f, backgroundMusic.getVolume() + 0.1f));
-        }
-        if (Gdx.input.isKeyJustPressed(volDown)) {
-            backgroundMusic.setVolume(Math.max(0.0f, backgroundMusic.getVolume() - 0.1f));
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.I)) camera.zoom = Math.max(1f, camera.zoom - 0.02f);
-        if (Gdx.input.isKeyPressed(Input.Keys.O)) camera.zoom = Math.min(2f, camera.zoom + 0.02f);
-    }
-
-    private void triggerEndScreen(String path) {
-        if (!showingEndScreen) {
-            Gdx.app.log("GameScreen", "Show End Screen: " + path);
-            showingEndScreen = true;
-
-            if (endScreenTexture != null) endScreenTexture.dispose();
-            endScreenTexture = new Texture(Gdx.files.internal(path));
-
-            if (backgroundMusic != null) backgroundMusic.stop();
-        }
-    }
-
     @Override
     public void resize(int width, int height) {
         aspectRatio = (float) width / (float) height;
@@ -366,12 +379,13 @@ public class GameScreen implements Screen {
     private void loadNextInfiniteLevel() {
         Gdx.app.log("GameScreen", "Loading next infinite level...");
         System.out.println("Loading next infinite level...");
-
         String newMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 15, 5, 3, 2);
         System.out.println("Generated next map: " + newMapFile);
-
+        if (newMapFile == null) {
+            Gdx.app.error("GameScreen", "Failed to generate next map for infinite mode");
+            return;
+        }
         gameMap.reloadFrom(newMapFile);
-
         float newStartX = gameMap.getPlayerStartX();
         float newStartY = gameMap.getPlayerStartY();
         if (newStartX == -1 || newStartY == -1) {
@@ -380,27 +394,25 @@ public class GameScreen implements Screen {
         }
         player.setX(newStartX);
         player.setY(newStartY);
-
         gameManager.onMapReloaded(
-                gameMap.getExits(),
-                gameMap.getHearts(),
-                gameMap.getKeys(),
-                gameMap.getTraps(),
-                gameMap.getEnemies(),
-                gameMap.getMorphTraps(),
+                gameMap.getExits(), gameMap.getHearts(), gameMap.getKeys(),
+                gameMap.getTraps(), gameMap.getEnemies(), gameMap.getMorphTraps(),
                 gameMap.getExitArrow()
         );
-
         gameManager.updateExitArrowReference(gameMap.getExitArrow());
 
+        // ✅ 修复：确保状态重置
         gameManager.resetAfterLevelTransition();
 
-        waitingForNextLevel = false;
-
+        showingEndScreen = false;
+        if (endScreenTexture != null) {
+            endScreenTexture.dispose();
+            endScreenTexture = null;
+        }
+        waitingForNextLevel = false; // 确保等待状态重置
         if (backgroundMusic != null) {
             backgroundMusic.play();
         }
-
-        Gdx.app.log("GameScreen", "Loaded next infinite level: " + newMapFile);
+        Gdx.app.log("GameScreen", "✅ Next level loaded successfully! Exiting end screen.");
     }
 }
