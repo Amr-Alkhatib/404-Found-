@@ -32,8 +32,8 @@ public final class GameCharacter extends MapElement {
         this.rightKey = rightKey;
 
         // ✅ 确保生命值正确初始化
-        this.heartsCollected = Constants.characterInitialBooks; // 应为 3
-        this.maxHearts = Constants.characterMaxBooks;           // 应为 3
+        // 应为 3
+        // 应为 3
 
         loadTexturesAndAnimations();
         super.currentMovementDirection = Direction.RIGHT;
@@ -244,12 +244,16 @@ public final class GameCharacter extends MapElement {
         if (gainTime < Constants.characterPainGainTolerance) {
             batch.setColor(0.6f, 1f, 0.8f, 1);
         }
-        float scale = 2.0f;
+        float scale = 1.5f;
+
         float drawWidth = 16 * scale;
         float drawHeight = 32 * scale;
-        float drawX = x * 32;
-        float yOffset = -8f;
+
+        float drawX = (x * 32) + (32 - drawWidth) / 2;
+
+        float yOffset = -2f;
         float drawY = (y * 32) + yOffset;
+
         batch.draw(frame, drawX, drawY, drawWidth, drawHeight);
         batch.setColor(1, 1, 1, 1);
     }

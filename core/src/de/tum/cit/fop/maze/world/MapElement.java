@@ -1,8 +1,6 @@
 package de.tum.cit.fop.maze.world;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -12,201 +10,142 @@ public abstract class MapElement {
 
     protected boolean traversable;
 
-    /**
-     * Constructor for class {@code MapElement}.
-     *
-     * @param x The x position of the object on the map.
-     * @param y The y position of the object on the map.
-     */
+    // --- HITBOX EINSTELLUNGEN ---
+
+    // 1. Wie breit bin ich, um durch Löcher zu passen? (Seitliche Schulterfreiheit)
+    // 0.75f = 24 Pixel breit (passt zur optischen Größe von scale 1.5)
+    private final float collisionOffset = 0.87f;
+
+    // 2. Wie nah darf ich an eine Wand herangehen? (Abstand zur Wand)
+    // 0.125f = 4 Pixel. Das entspricht genau dem Rand, den wir beim Malen freigelassen haben.
+    // Wir ziehen das ab, damit die Figur die Wand optisch BERÜHREN kann.
+    private final float BOX_PADDING = 0.125f;
+
     public MapElement(float x, float y) {
         this.x = x;
         this.y = y;
     }
 
-
-    /**
-     * The x position of the object on the game map.
-     */
     protected float x;
-
-    /**
-     * The y position of the object on the game map.
-     */
     protected float y;
-
-    /**
-     * The direction in which the object is supposed to be moving, should it move.
-     */
     protected Direction currentMovementDirection;
 
+    public float getX() { return x; }
+    public float getY() { return y; }
+    public void setX(float x) { this.x = x; }
+    public void setY(float y) { this.y = y; }
 
-    /**
-     * Public getter for the x position of the object on the game map.
-     *
-     * @return The x position of the object on the game map.
-     */
-    public float getX() {
-        return x;
-    }
-
-    /**
-     * Public getter for the y position of the object on the game map.
-     *
-     * @return The y position of the object on the game map.
-     */
-    public float getY() {
-        return y;
-    }
-
-    // --- Add these two methods ---
-    /**
-     * Public setter for the x position of the object on the game map.
-     *
-     * @param x The new x position.
-     */
-    public void setX(float x) {
-        this.x = x;
-    }
-
-    /**
-     * Public setter for the y position of the object on the game map.
-     *
-     * @param y The new y position.
-     */
-    public void setY(float y) {
-        this.y = y;
-    }
-    // --- End of added methods ---
-
-
-    /**
-     * Calculates the speed with which the map element should move.
-     *
-     * @param delta The time elapsed since the last frame.
-     * @return The speed with which the map element moves.
-     */
     protected float calculateSpeed(float delta) {
         return 0f;
     }
 
     /**
-     * Makes the map element move with a determined speed in the UP direction.
-     *
-     * @param delta The time elapsed since the last frame.
-     * @param walls The list of walls that should be avoided.
-     * @return Whether the enemy has moved. False if encountered a wall.
+     * Move UP.
      */
     public boolean moveUp(float delta, List<Wall> walls) {
         float speed = calculateSpeed(delta);
+        float nextY = this.y + speed;
 
-        for (Wall wall : walls.stream().sorted(Comparator.comparing(Wall::getY)).toList()) {
-            if (wall.x - 0.98 < this.x && this.x < wall.x + 0.98
-                    && this.y <= wall.y - 1 && wall.y - 1 <= this.y + speed) {
-                y = wall.y - 1;
+        for (Wall wall : walls) {
+            // Passt meine Breite in den Gang?
+            boolean xOverlap = (this.x > wall.x - collisionOffset) && (this.x < wall.x + collisionOffset);
+
+            // Stoppen, wenn Wand über mir ist (wall.y > this.y)
+            // Wir stoppen bei "Wandposition - 1 + Padding", also hauteng dran.
+            if (xOverlap && wall.y > this.y && nextY >= wall.y - 1 + BOX_PADDING) {
+                y = wall.y - 1 + BOX_PADDING;
                 return false;
             }
         }
 
-        if (this.y <= GameMap.getHeight() && GameMap.getHeight() <= this.y + speed) {
+        if (this.y <= GameMap.getHeight() && GameMap.getHeight() <= nextY) {
             return false;
         }
 
         this.y += speed;
         currentMovementDirection = Direction.UP;
-
         return true;
     }
 
     /**
-     * Makes the map element move with a determined speed in the DOWN direction.
-     *
-     * @param delta The time elapsed since the last frame.
-     * @param walls The list of walls that should be avoided.
-     * @return Whether the enemy has moved. False if encountered a wall.
+     * Move DOWN.
      */
     public boolean moveDown(float delta, List<Wall> walls) {
         float speed = calculateSpeed(delta);
+        float nextY = this.y - speed;
 
-        for (Wall wall : walls.stream().sorted(Comparator.comparing(Wall::getY).reversed()).toList()) {
-            if (wall.x - Constants.calibratedCollision < this.x && this.x < wall.x + Constants.calibratedCollision
-                    && this.y >= wall.y + 1 && wall.y + 1 >= this.y - speed) {
-                y = wall.y + 1;
+        for (Wall wall : walls) {
+            boolean xOverlap = (this.x > wall.x - collisionOffset) && (this.x < wall.x + collisionOffset);
+
+            // Stoppen bei "Wandposition + 1 - Padding"
+            if (xOverlap && wall.y < this.y && nextY <= wall.y + 1 - BOX_PADDING) {
+                y = wall.y + 1 - BOX_PADDING;
                 return false;
             }
         }
 
-        if (this.y >= 0 && 0 >= this.y - speed) {
+        if (this.y >= 0 && 0 >= nextY) {
             return false;
         }
 
         y -= speed;
         currentMovementDirection = Direction.DOWN;
-
         return true;
     }
 
     /**
-     * Makes the map element move with a determined speed in the LEFT direction.
-     *
-     * @param delta The time elapsed since the last frame.
-     * @param walls The list of walls that should be avoided.
-     * @return Whether the enemy has moved. False if encountered a wall.
+     * Move LEFT.
      */
     public boolean moveLeft(float delta, List<Wall> walls) {
         float speed = calculateSpeed(delta);
+        float nextX = this.x - speed;
 
-        for (Wall wall : walls.stream().sorted(Comparator.comparing(Wall::getX).reversed()).toList()) {
-            if (wall.y - Constants.calibratedCollision < this.y && this.y < wall.y + Constants.calibratedCollision
-                    && this.x >= wall.x + 1 && wall.x + 1 >= this.x - speed) {
-                x = wall.x + 1;
+        for (Wall wall : walls) {
+            boolean yOverlap = (this.y > wall.y - collisionOffset) && (this.y < wall.y + collisionOffset);
+
+            // Stoppen bei "Wandposition + 1 - Padding"
+            if (yOverlap && wall.x < this.x && nextX <= wall.x + 1 - BOX_PADDING) {
+                x = wall.x + 1 - BOX_PADDING;
                 return false;
             }
         }
 
-        if (this.x >= 0 && 0 >= this.x - speed) {
+        if (this.x >= 0 && 0 >= nextX) {
             return false;
         }
 
         x -= speed;
         currentMovementDirection = Direction.LEFT;
-
         return true;
     }
 
     /**
-     * Makes the map element move with a determined speed in the RIGHT direction.
-     *
-     * @param delta The time elapsed since the last frame.
-     * @param walls The list of walls that should be avoided.
-     * @return Whether the enemy has moved. False if encountered a wall.
+     * Move RIGHT.
      */
     public boolean moveRight(float delta, List<Wall> walls) {
         float speed = calculateSpeed(delta);
+        float nextX = this.x + speed;
 
-        for (Wall wall : walls.stream().sorted(Comparator.comparing(Wall::getX)).toList()) {
-            if (wall.y - Constants.calibratedCollision < this.y && this.y < wall.y + Constants.calibratedCollision
-                    && this.x <= wall.x - 1 && wall.x - 1 <= this.x + speed) {
-                x = wall.x - 1;
+        for (Wall wall : walls) {
+            boolean yOverlap = (this.y > wall.y - collisionOffset) && (this.y < wall.y + collisionOffset);
+
+            // Stoppen bei "Wandposition - 1 + Padding"
+            if (yOverlap && wall.x > this.x && nextX >= wall.x - 1 + BOX_PADDING) {
+                x = wall.x - 1 + BOX_PADDING;
                 return false;
             }
         }
 
-        if (this.x <= GameMap.getWidth() && GameMap.getWidth() <= this.x + speed) {
+        if (this.x <= GameMap.getWidth() && GameMap.getWidth() <= nextX) {
             return false;
         }
 
         x += speed;
         currentMovementDirection = Direction.RIGHT;
-
         return true;
     }
 
-
-    /**
-     * Disposes of unneeded resources.
-     */
     public void dispose() {}
-
 
     public abstract void render(SpriteBatch batch);
 }
