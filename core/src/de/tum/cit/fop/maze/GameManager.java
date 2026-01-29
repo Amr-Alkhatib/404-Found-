@@ -346,4 +346,69 @@ public class GameManager {
     public List<Heart> getHearts() { return hearts; }
     public List<Boost> getBoosts() { return boosts; }
     public List<MorphTrap> getMorphTraps() { return morphTraps; }
+
+    public boolean isWin() {
+        return win; // Oder wie deine Variable für "Gewonnen" heißt
+    }
+
+    public boolean isLose() {
+        return lose; // Oder wie deine Variable für "Verloren" heißt
+    }
+
+    // 2. Infinite Mode: Wenn die Map neu geladen wird
+    public void onMapReloaded(List<Exit> exits, List<Heart> hearts, List<Key> keys,
+                              List<Trap> traps, List<Enemy> enemies,
+                              List<MorphTrap> morphTraps, ExitArrow exitArrow) {
+        // Wir müssen dem Manager die neuen Listen geben, sonst prüft er Kollisionen mit der alten Map!
+        this.exitArrow = exitArrow;
+    }
+
+    // 3. Pfeil updaten
+    public void updateExitArrowReference(ExitArrow exitArrow) {
+        this.exitArrow = exitArrow;
+    }
+
+    // 4. Alles zurücksetzen für das nächste Level
+    public void resetAfterLevelTransition() {
+        this.win = false;
+        this.lose = false;
+        // Falls du Timer hast, hier auch resetten
+    }
+
+    public void requestSaveGameState() {
+        var prefs = Gdx.app.getPreferences("MazeRunnerSave");
+
+        // Speichern der Spieler-Daten
+        if (player != null) {
+            prefs.putInteger("hearts", player.getHeartsCollected());
+            prefs.putFloat("playerX", player.getX());
+            prefs.putFloat("playerY", player.getY());
+            prefs.putString("currentLevel", gameMap.getLevelPath());
+        }
+
+        prefs.flush();
+        Gdx.app.log("GameManager", "Spielstand erfolgreich gespeichert!");
+    }
+
+    /**
+     * Loads progress again
+     */
+    public void requestLoadGameState() {
+        var prefs = Gdx.app.getPreferences("MazeRunnerSave");
+
+        if (player != null && prefs.contains("hearts")) {
+            // Leben laden
+            int savedHearts = prefs.getInteger("hearts", 3); // Standard 3
+            player.setHeartsCollected(savedHearts);
+
+            // Position laden
+            float x = prefs.getFloat("playerX", 1f);
+            float y = prefs.getFloat("playerY", 1f);
+            player.setPosition(x, y);
+
+            Gdx.app.log("GameManager", "Spielstand geladen: " + savedHearts + " Leben.");
+        } else {
+            Gdx.app.log("GameManager", "Kein Spielstand gefunden.");
+        }
+    }
 }

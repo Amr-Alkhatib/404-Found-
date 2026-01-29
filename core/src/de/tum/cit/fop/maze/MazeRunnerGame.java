@@ -157,7 +157,7 @@ public class MazeRunnerGame extends Game {
             gameScreen.dispose();
         }
         gameScreen = new GameScreen(this, loadedState.mapFile, false);
-        gameScreen.getGameManager().requestLoadGameState(loadedState);
+        gameScreen.getGameManager().requestLoadGameState();
         currentBackgroundMusic = gameScreen.getBackgroundMusic();
         setScreen(gameScreen);
 

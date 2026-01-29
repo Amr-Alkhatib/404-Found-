@@ -413,6 +413,6 @@ public class GameScreen implements Screen {
         if (backgroundMusic != null) {
             backgroundMusic.play();
         }
-        Gdx.app.log("GameScreen", "✅ Next level loaded successfully! Exiting end screen.");
+        Gdx.app.log("GameScreen", "Next level loaded successfully! Exiting end screen.");
     }
 }
