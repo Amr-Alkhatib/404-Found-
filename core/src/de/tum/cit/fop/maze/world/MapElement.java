@@ -30,10 +30,21 @@ public abstract class MapElement {
     protected float y;
     protected Direction currentMovementDirection;
 
-    public float getX() { return x; }
-    public float getY() { return y; }
-    public void setX(float x) { this.x = x; }
-    public void setY(float y) { this.y = y; }
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    public void setY(float y) {
+        this.y = y;
+    }
 
     protected float calculateSpeed(float delta) {
         return 0f;
@@ -145,7 +156,13 @@ public abstract class MapElement {
         return true;
     }
 
-    public void dispose() {}
+    public void dispose() {
+    }
 
     public abstract void render(SpriteBatch batch);
+
+    public void setPosition(float x, float y) {
+        this.x = x;
+        this.y = y;
+    }
 }

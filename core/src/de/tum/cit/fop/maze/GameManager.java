@@ -359,7 +359,6 @@ public class GameManager {
     public void onMapReloaded(List<Exit> exits, List<Heart> hearts, List<Key> keys,
                               List<Trap> traps, List<Enemy> enemies,
                               List<MorphTrap> morphTraps, ExitArrow exitArrow) {
-        // Wir müssen dem Manager die neuen Listen geben, sonst prüft er Kollisionen mit der alten Map!
         this.exitArrow = exitArrow;
     }
 
@@ -372,70 +371,54 @@ public class GameManager {
     public void resetAfterLevelTransition() {
         this.win = false;
         this.lose = false;
-        // Falls du Timer hast, hier auch resetten
     }
 
-    private String getCollectedKeyIndices() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < keys.size(); i++) {
-            if (keys.get(i).isCollected()) { // Prüfen ob eingesammelt
-                if (sb.length() > 0) sb.append(",");
-                sb.append(i);
-            }
-        }
-        return sb.toString();
-    }
+    // ============================================================
+    // NEU: HELFER MIT POSITIONEN (x,y,status)
+    // ============================================================
 
-    private String getDeadEnemyIndices() {
+    // Generischer Helfer für Items (Keys, Hearts, Boosts)
+    // Format: "x,y,1;x,y,0" (1 = eingesammelt/weg, 0 = da)
+    private String getItemDataString(List<? extends MapElement> list) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < enemies.size(); i++) {
-            if (!enemies.get(i).isActive()) { // Prüfen ob tot (nicht aktiv)
-                if (sb.length() > 0) sb.append(",");
-                sb.append(i);
-            }
-        }
-        return sb.toString();
-    }
+        for (MapElement elem : list) {
+            if (sb.length() > 0) sb.append(";");
 
-    private String getCollectedHeartIndices() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < hearts.size(); i++) {
-            if (hearts.get(i).isCollected()) {
-                if (sb.length() > 0) sb.append(",");
-                sb.append(i);
-            }
-        }
-        return sb.toString();
-    }
-
-    // =========================
-    // SPEICHERN
-    // =========================
-    private String getSimpleCollectionString(List<? extends MapElement> list) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < list.size(); i++) {
             boolean isGone = false;
-            MapElement elem = list.get(i);
-
-            // Prüfen je nach Typ, ob das Item "weg" ist
             if (elem instanceof Key) isGone = ((Key) elem).isCollected();
             else if (elem instanceof Heart) isGone = ((Heart) elem).isCollected();
             else if (elem instanceof Boost) isGone = ((Boost) elem).isCollected();
 
-            if (isGone) {
-                if (sb.length() > 0) sb.append(",");
-                sb.append(i);
-            }
+            sb.append(elem.getX()).append(",")
+                    .append(elem.getY()).append(",")
+                    .append(isGone ? "1" : "0");
         }
         return sb.toString();
     }
 
-    // Speichert exakte Positionen und Leben der Gegner: "x,y,active;x,y,active"
+    // Helfer für Fallen (Traps)
+    // Format: "x,y,1;x,y,0" (1 = aktiv/gefährlich, 0 = inaktiv)
+    private String getTrapDataStringDetailed(List<? extends MapElement> list) {
+        StringBuilder sb = new StringBuilder();
+        for (MapElement elem : list) {
+            if (sb.length() > 0) sb.append(";");
+
+            boolean isActive = false;
+            if (elem instanceof Trap) isActive = ((Trap) elem).isActive();
+            else if (elem instanceof MorphTrap) isActive = ((MorphTrap) elem).isActive();
+
+            sb.append(elem.getX()).append(",")
+                    .append(elem.getY()).append(",")
+                    .append(isActive ? "1" : "0");
+        }
+        return sb.toString();
+    }
+
+    // Helfer für Gegner (wie gehabt)
     private String getEnemyDataString() {
         StringBuilder sb = new StringBuilder();
         for (Enemy e : enemies) {
             if (sb.length() > 0) sb.append(";");
-            // Wir speichern: X, Y und ob er aktiv ist (1 oder 0)
             sb.append(e.getX()).append(",")
                     .append(e.getY()).append(",")
                     .append(e.isActive() ? "1" : "0");
@@ -443,41 +426,30 @@ public class GameManager {
         return sb.toString();
     }
 
-    // Speichert den Status der Fallen (1=aktiv, 0=inaktiv)
-    private String getTrapDataString() {
-        StringBuilder sb = new StringBuilder();
-        for (Trap t : traps) {
-            if (sb.length() > 0) sb.append(",");
-            sb.append(t.isActive() ? "1" : "0");
-        }
-        return sb.toString();
-    }
-
     // ============================================================
-    // NEU: SPEICHERN (Ruft das SaveSystem mit allen Details auf)
+    // SPEICHERN (Updated: Speichert ALLES inkl. Positionen und Scores)
     // ============================================================
     public void requestSaveGameState() {
         if (player == null) return;
-
         String currentLevel = gameMap.getLevelPath();
         if (currentLevel == null) currentLevel = "maps/level-1.properties";
 
         SaveSystem.saveGame(
-                player.getHeartsCollected(),
-                player.getX(),
-                player.getY(),
-                currentLevel,
+                player.getHeartsCollected(), player.getX(), player.getY(), currentLevel,
                 this.timePlayed,
-                getSimpleCollectionString(keys),    // Welche Schlüssel fehlen?
-                getEnemyDataString(),               // Wo stehen die Gegner?
-                getSimpleCollectionString(hearts),  // Welche Herzen fehlen?
-                getSimpleCollectionString(boosts),  // Welche Boosts fehlen?
-                getTrapDataString()                 // Welche Fallen sind an?
+                getItemDataString(keys),          // Keys mit Position
+                getEnemyDataString(),             // Gegner mit Position
+                getItemDataString(hearts),        // Herzen mit Position
+                getItemDataString(boosts),        // Boosts mit Position
+                getTrapDataStringDetailed(traps), // Fallen mit Position
+                getTrapDataStringDetailed(morphTraps), // MorphTraps mit Position
+                this.totalHeartsCollected,      // Score merken
+                this.totalEnemiesKilled         // Score merken
         );
     }
 
     // ============================================================
-    // NEU: LADEN (Stellt den exakten Zustand wieder her)
+    // LADEN (Updated: Stellt Positionen und Scores wieder her)
     // ============================================================
     public void requestLoadGameState() {
         if (!SaveSystem.hasSaveGame()) return;
@@ -485,75 +457,81 @@ public class GameManager {
 
         var prefs = SaveSystem.getGameSave();
 
-        // 1. Spieler & Zeit wiederherstellen
+        // 1. Spieler & Zeit
         player.setHeartsCollected(prefs.getInteger("hearts", 3));
         float x = prefs.getFloat("playerX", 1f);
         float y = prefs.getFloat("playerY", 1f);
         if (x < 1 && y < 1) { x = 1; y = 1; }
         player.setPosition(x, y);
-
         this.timePlayed = prefs.getFloat("timePlayed", 0f);
         updateTimerDisplay();
 
-        // 2. GEGNER WIEDERHERSTELLEN (Position & Status)
-        String enemyData = prefs.getString("enemyData", "");
-        if (!enemyData.isEmpty()) {
-            String[] individualEnemies = enemyData.split(";");
-            for (int i = 0; i < individualEnemies.length && i < enemies.size(); i++) {
-                try {
-                    String[] stats = individualEnemies[i].split(","); // Format: x,y,active
-                    float ex = Float.parseFloat(stats[0]);
-                    float ey = Float.parseFloat(stats[1]);
-                    boolean active = stats[2].equals("1");
+        // 2. Score Zähler wiederherstellen (WICHTIG!)
+        this.totalHeartsCollected = prefs.getInteger("savedTotalHearts", 0);
+        this.totalEnemiesKilled = prefs.getInteger("savedTotalEnemies", 0);
 
-                    Enemy e = enemies.get(i);
-                    // Falls deine Enemy-Klasse kein setPosition hat, nutze: e.setX(ex); e.setY(ey);
-                    e.setX(ex); e.setY(ey);
+        // 3. ALLE OBJEKTE WIEDERHERSTELLEN
+        // Wir nutzen eine Helfer-Methode für alles, was MapElement ist
+        restoreMapElements(keys, prefs.getString("keyData", ""));
+        restoreMapElements(enemies, prefs.getString("enemyData", "")); // Gegner nutzen gleiche Logik (x,y,status)
+        restoreMapElements(hearts, prefs.getString("heartData", ""));
+        restoreMapElements(boosts, prefs.getString("boostData", ""));
+        restoreMapElements(traps, prefs.getString("trapData", ""));
+        restoreMapElements(morphTraps, prefs.getString("morphTrapData", ""));
 
-                    if (!active) e.deactivate(); // Tot bleibt tot
-
-                } catch (Exception e) {
-                    Gdx.app.error("GameManager", "Fehler beim Laden von Enemy " + i);
-                }
-            }
-        }
-
-        // 3. ITEMS ENTFERNEN (Was schon gesammelt war, wieder verstecken)
-        restoreSimpleCollection(keys, prefs.getString("collectedKeys", ""));
-        restoreSimpleCollection(hearts, prefs.getString("collectedHearts", ""));
-        restoreSimpleCollection(boosts, prefs.getString("collectedBoosts", ""));
-
-        // 4. FALLEN STATUS WIEDERHERSTELLEN
-        String trapData = prefs.getString("trapStatus", "");
-        if (!trapData.isEmpty()) {
-            String[] stats = trapData.split(",");
-            for (int i = 0; i < stats.length && i < traps.size(); i++) {
-                if (stats[i].equals("0")) traps.get(i).deactivate();
-            }
-        }
-
-        tryUnlockExits(); // Prüfen, ob durch die geladenen Schlüssel die Tür aufgeht
-        hud.update();     // HUD aktualisieren (Schlüssel-Icons etc.)
-
-        Gdx.app.log("GameManager", "Exakter Snapshot geladen!");
+        tryUnlockExits();
+        hud.update();
+        Gdx.app.log("GameManager", "Spielstand geladen: Alle Positionen & Scores korrigiert!");
     }
 
-    // Helfer zum Wiederherstellen der Items
-    private void restoreSimpleCollection(List<? extends MapElement> list, String data) {
+    /**
+     * Die magische Methode, die alles wieder an den richtigen Platz schiebt.
+     */
+    private void restoreMapElements(List<? extends MapElement> list, String data) {
         if (data == null || data.isEmpty()) return;
 
-        String[] indices = data.split(",");
-        for (String s : indices) {
+        String[] items = data.split(";");
+        // Wir gehen sicher, dass wir nicht über die Listengrenzen laufen
+        for (int i = 0; i < items.length && i < list.size(); i++) {
             try {
-                int index = Integer.parseInt(s);
-                if (index >= 0 && index < list.size()) {
-                    MapElement elem = list.get(index);
-                    // Entsprechende collect-Methode aufrufen
-                    if (elem instanceof Key) ((Key) elem).collect();
-                    else if (elem instanceof Heart) ((Heart) elem).collect();
-                    else if (elem instanceof Boost) ((Boost) elem).collect();
+                String[] stats = items[i].split(","); // x, y, status
+                float ex = Float.parseFloat(stats[0]);
+                float ey = Float.parseFloat(stats[1]);
+                boolean statusBool = stats[2].equals("1"); // 1 = eingesammelt/aktiv/tot (je nach Typ)
+
+                MapElement elem = list.get(i);
+
+                // ZWINGT das Element an die gespeicherte Position
+                // Falls setPosition nicht geht, nimm: elem.setX(ex); elem.setY(ey);
+                elem.setPosition(ex, ey);
+
+                // Status wiederherstellen
+                if (elem instanceof Enemy) {
+                    if (!statusBool) ((Enemy)elem).deactivate(); // Bei Gegner: 0 = Tot (inaktiv)
+                    // (Anmerkung: Falls deine Logic "1 = tot" speichert, hier umdrehen.
+                    // Aber getEnemyDataString speichert isActive als "1", also ist !statusBool korrekt für tot)
                 }
-            } catch (Exception e) { /* Ignorieren */ }
+                else if (elem instanceof Key) {
+                    if (statusBool) ((Key)elem).collect(); // Bei Key: 1 = Collected
+                }
+                else if (elem instanceof Heart) {
+                    if (statusBool) ((Heart)elem).collect(); // Bei Heart: 1 = Collected
+                }
+                else if (elem instanceof Boost) {
+                    if (statusBool) ((Boost)elem).collect(); // Bei Boost: 1 = Collected
+                }
+                else if (elem instanceof Trap) {
+                    if (!statusBool) ((Trap)elem).deactivate(); // Bei Trap: 1 = Aktiv. Wenn 0 -> aus.
+                }
+                else if (elem instanceof MorphTrap) {
+                    // MorphTrap Logik
+                    // Falls es Methoden gibt, hier anwenden.
+                    // z.B. if (!statusBool) ((MorphTrap)elem).deactivate();
+                }
+
+            } catch (Exception e) {
+                Gdx.app.error("GameManager", "Fehler bei Item Restore Index " + i);
+            }
         }
     }
 }

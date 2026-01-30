@@ -13,35 +13,43 @@ public class SaveSystem {
     private static final String PREF_NAME_GLOBAL = "MazeRunnerPrefs";
 
     // ============================================================
-    // 1. DER PERFEKTE SNAPSHOT
+    // 1. DER PERFEKTE SNAPSHOT (Mit Positionen für ALLES + Score)
     // ============================================================
 
     public static void saveGame(int hearts, float x, float y, String levelPath,
                                 float timePlayed,
-                                String collectedKeys,     // Welche Schlüssel weg sind
-                                String enemyData,         // Wo die Gegner stehen & ob sie leben
-                                String collectedHearts,   // Welche Herzen weg sind
-                                String collectedBoosts,   // Welche Boosts weg sind
-                                String trapStatus) {      // Welche Fallen aktiv sind
+                                String keyData,       // Geändert: Speichert jetzt Positionen + Status
+                                String enemyData,     // Speichert Positionen + Status
+                                String heartData,     // Geändert: Positionen + Status
+                                String boostData,     // Geändert: Positionen + Status
+                                String trapData,      // Geändert: Positionen + Status
+                                String morphTrapData, // NEU: MorphTraps
+                                int totalHearts,      // NEU: Score
+                                int totalEnemies) {   // NEU: Score
 
         Preferences prefs = Gdx.app.getPreferences(PREF_NAME_GAME);
 
-        // Basis
+        // Basis-Daten
         prefs.putInteger("hearts", hearts);
         prefs.putFloat("playerX", x);
         prefs.putFloat("playerY", y);
         prefs.putString("currentLevel", levelPath);
         prefs.putFloat("timePlayed", timePlayed);
 
-        // Die Listen-Daten
-        prefs.putString("collectedKeys", collectedKeys);
+        // Objekt-Daten (Positionen & Status)
+        prefs.putString("keyData", keyData);
         prefs.putString("enemyData", enemyData);
-        prefs.putString("collectedHearts", collectedHearts);
-        prefs.putString("collectedBoosts", collectedBoosts);
-        prefs.putString("trapStatus", trapStatus);
+        prefs.putString("heartData", heartData);
+        prefs.putString("boostData", boostData);
+        prefs.putString("trapData", trapData);
+        prefs.putString("morphTrapData", morphTrapData);
+
+        // Score-Daten
+        prefs.putInteger("savedTotalHearts", totalHearts);
+        prefs.putInteger("savedTotalEnemies", totalEnemies);
 
         prefs.flush();
-        Gdx.app.log("SaveSystem", "Snapshot gespeichert!");
+        Gdx.app.log("SaveSystem", "Snapshot mit exakten Positionen gespeichert!");
     }
 
     public static Preferences getGameSave() {
@@ -52,28 +60,45 @@ public class SaveSystem {
         return getGameSave().contains("hearts");
     }
 
-    // ... (Der Rest für InfiniteMode/TotalScore bleibt gleich wie vorher) ...
-    public static void saveTotalScore(int score) {
-        Gdx.app.getPreferences(PREF_NAME_GLOBAL).putInteger("total_score", score).flush();
-    }
-    public static int loadTotalScore() {
-        return Gdx.app.getPreferences(PREF_NAME_GLOBAL).getInteger("total_score", 0);
-    }
-    public static void saveInfiniteModeScores(List<Integer> scores) {
-        Preferences prefs = Gdx.app.getPreferences(PREF_NAME_SCORES);
-        for (int i = 0; i < scores.size(); i++) prefs.putInteger("score_" + i, scores.get(i));
-        for (int i = scores.size(); i < 10; i++) if (prefs.contains("score_" + i)) prefs.remove("score_" + i);
-        prefs.flush();
-    }
-    public static List<Integer> loadInfiniteModeScores() {
-        Preferences prefs = Gdx.app.getPreferences(PREF_NAME_SCORES);
-        List<Integer> scores = new ArrayList<>();
-        for (int i = 0; i < 10; i++) if (prefs.contains("score_" + i)) scores.add(prefs.getInteger("score_" + i));
-        Collections.sort(scores, Collections.reverseOrder());
-        return scores;
-    }
     public static void clearSave() {
         getGameSave().clear();
         getGameSave().flush();
+    }
+
+    // ============================================================
+    // 2. GLOBAL SCORE & INFINITE MODE (Bleibt unverändert)
+    // ============================================================
+
+    public static void saveTotalScore(int score) {
+        Gdx.app.getPreferences(PREF_NAME_GLOBAL).putInteger("total_score", score).flush();
+    }
+
+    public static int loadTotalScore() {
+        return Gdx.app.getPreferences(PREF_NAME_GLOBAL).getInteger("total_score", 0);
+    }
+
+    public static void saveInfiniteModeScores(List<Integer> scores) {
+        Preferences prefs = Gdx.app.getPreferences(PREF_NAME_SCORES);
+        for (int i = 0; i < scores.size(); i++) {
+            prefs.putInteger("score_" + i, scores.get(i));
+        }
+        for (int i = scores.size(); i < 10; i++) {
+            if (prefs.contains("score_" + i)) {
+                prefs.remove("score_" + i);
+            }
+        }
+        prefs.flush();
+    }
+
+    public static List<Integer> loadInfiniteModeScores() {
+        Preferences prefs = Gdx.app.getPreferences(PREF_NAME_SCORES);
+        List<Integer> scores = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            if (prefs.contains("score_" + i)) {
+                scores.add(prefs.getInteger("score_" + i));
+            }
+        }
+        Collections.sort(scores, Collections.reverseOrder());
+        return scores;
     }
 }
