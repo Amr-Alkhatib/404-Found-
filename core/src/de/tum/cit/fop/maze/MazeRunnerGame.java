@@ -24,6 +24,7 @@ import java.util.List;
 public class MazeRunnerGame extends Game {
 
     private final NativeFileChooser fileChooser;
+    public boolean IsInfiniteMode;
     private TextButton infiniteModeButton;
 
 
@@ -127,19 +128,33 @@ public class MazeRunnerGame extends Game {
     }
 
 
-    public void goToGameNew(String mapLevel) {
+//    public void goToGameNew(String mapLevel) {
+//        if (gameScreen != null) {
+//            gameScreen.dispose();
+//        }
+//
+//        gameScreen = new GameScreen(this, mapLevel, true);
+//        currentBackgroundMusic = gameScreen.getBackgroundMusic();
+//        setScreen(gameScreen);
+//
+//        cleanupOtherScreens();
+//    }
+
+    public void goToNextInfiniteLevel() {
         if (gameScreen != null) {
-            gameScreen.dispose();
+            // 直接在现有的 gameScreen 上加载新地图
+            String newMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 20, 5, 3, 2);
+            if (newMapFile != null) {
+                gameScreen.reloadFromNewMap(newMapFile); // <--- 调用 GameScreen 的 reload 方法
+                this.currentInfiniteLevel++; // 增加关卡数
+            } else {
+                Gdx.app.error("MazeRunnerGame", "Failed to generate next infinite map, returning to menu.");
+                goToMenu(); // 如果生成失败，返回菜单
+            }
+        } else {
+            Gdx.app.error("MazeRunnerGame", "No active GameScreen to load next level into.");
         }
-
-        gameScreen = new GameScreen(this, mapLevel, true);
-        currentBackgroundMusic = gameScreen.getBackgroundMusic();
-        setScreen(gameScreen);
-
-        cleanupOtherScreens();
     }
-
-
     public void goToGame(String mapLevel) {
         if (gameScreen != null) {
             gameScreen.dispose();
@@ -152,105 +167,57 @@ public class MazeRunnerGame extends Game {
     }
 
 
-    public void goToGame(GameState loadedState) {
-        if (gameScreen != null) {
-            gameScreen.dispose();
-        }
-        gameScreen = new GameScreen(this, loadedState.mapFile, false);
-        gameScreen.getGameManager().requestLoadGameState();
-        currentBackgroundMusic = gameScreen.getBackgroundMusic();
-        setScreen(gameScreen);
-
-        cleanupOtherScreens();
-    }
+//    public void goToGame(GameState loadedState) {
+//        if (gameScreen != null) {
+//            gameScreen.dispose();
+//        }
+//        gameScreen = new GameScreen(this, loadedState.mapFile, false);
+//        gameScreen.getGameManager().requestLoadGameState();
+//        currentBackgroundMusic = gameScreen.getBackgroundMusic();
+//        setScreen(gameScreen);
+//
+//        cleanupOtherScreens();
+//    }
 
 
     /**
      * Starts the infinite mode gameplay.
      * Generates the first map and creates the initial GameScreen.
      */
-    public void startInfiniteMode() {
-        System.out.println("MazeRunnerGame: Starting Infinite Mode...");
-        this.isInfiniteMode = true;
-        this.currentInfiniteLevel = 1;
-        int width = 20;
-        int height = 20;
-        int numTraps = 10;
-        int numEnemies = 2;
-        int numMorphTraps = 3;
-        String generatedMapPath = InfiniteMapGenerator.generateInfiniteMap(
-                width, height, numTraps, numEnemies, numMorphTraps);
-        if (generatedMapPath == null) {
-            System.err.println("Failed to generate initial infinite map. Aborting startInfiniteMode.");
-            return;
-        }
-        System.out.println("MazeRunnerGame: Generated first map for infinite mode: " + generatedMapPath);
-
-        // ✅ 修复：传递 "INFINITE_MODE" 而不是 generatedMapPath
-        GameScreen newGameScreen = new GameScreen(this, "INFINITE_MODE", true /* ignoreSavedState */);
-        this.gameScreen = newGameScreen;
-        this.setScreen(gameScreen);
-        cleanupOtherScreens();
-    }
+//    public void startInfiniteMode() {
+//        System.out.println("MazeRunnerGame: Starting Infinite Mode...");
+//        this.isInfiniteMode = true;
+//        this.currentInfiniteLevel = 1;
+//        int width = 20;
+//        int height = 18;
+//        int numTraps = 10;
+//        int numEnemies = 2;
+//        int numMorphTraps = 3;
+//        String generatedMapPath = InfiniteMapGenerator.generateInfiniteMap(
+//                width, height, numTraps, numEnemies, numMorphTraps);
+//        if (generatedMapPath == null) {
+//            System.err.println("Failed to generate initial infinite map. Aborting startInfiniteMode.");
+//            return;
+//        }
+//        System.out.println("MazeRunnerGame: Generated first map for infinite mode: " + generatedMapPath);
+//
+//        // ✅ 修复：传递 "INFINITE_MODE" 而不是 generatedMapPath
+//        GameScreen newGameScreen = new GameScreen(this, "INFINITE_MODE", true /* ignoreSavedState */);
+//        this.gameScreen = newGameScreen;
+//        this.setScreen(gameScreen);
+//        cleanupOtherScreens();
+//    }
 
 
     /**
      * Called by GameScreen when an infinite mode level is completed successfully.
      * Generates the next level and switches to it.
      */
-    public void continueInfiniteMode() {
-        if (!isInfiniteMode) {
-
-            System.err.println("Warning: continueInfiniteMode called but not in infinite mode!");
-            return;
-        }
-
-        System.out.println("MazeRunnerGame: Continuing Infinite Mode to level " + (currentInfiniteLevel + 1));
-
-        this.currentInfiniteLevel++;
-
-
-        int width = 20 + (currentInfiniteLevel / 5);
-        int height = 20 + (currentInfiniteLevel / 5);
-        int numTraps = 10 + currentInfiniteLevel;
-        int numEnemies = 2 + (currentInfiniteLevel / 3);
-        int numMorphTraps = 3 + (currentInfiniteLevel / 10);
-
-        String generatedMapPath = InfiniteMapGenerator.generateInfiniteMap(
-                width, height, numTraps, numEnemies, numMorphTraps);
-
-        if (generatedMapPath == null) {
-            System.err.println("Failed to generate subsequent infinite map for level " + currentInfiniteLevel + ". Aborting continueInfiniteMode.");
-            return;
-        }
-
-        System.out.println("MazeRunnerGame: Generated next map for infinite mode (level " + currentInfiniteLevel + "): " + generatedMapPath);
-
-        GameScreen newGameScreen = new GameScreen(this, generatedMapPath, true /* ignoreSavedState, implies infinite mode */);
-        this.gameScreen = newGameScreen;
-        this.setScreen(gameScreen);
-
-        cleanupOtherScreens();
-    }
-
-    /**
-     * Called by GameScreen when infinite mode ends (e.g., player loses all lives).
-     * Resets the infinite mode state and returns to the menu.
-     */
-    public void endInfiniteMode() {
-        System.out.println("MazeRunnerGame: Ending Infinite Mode.");
-        this.isInfiniteMode = false;
-        this.currentInfiniteLevel = 0;
-        goToMenu();
-    }
 
     /**
      * Getter for the infinite mode flag.
      * Useful for other parts of the code to check the current mode.
      */
-    public boolean getIsInfiniteMode() {
-        return this.isInfiniteMode;
-    }
     // 在 MazeRunnerGame.java 中添加以下方法
 
 
@@ -323,13 +290,14 @@ public class MazeRunnerGame extends Game {
      */
     @Override
     public void dispose() {
+            textureManager.dispose();
         if (getScreen() != null) {
             getScreen().hide();
             getScreen().dispose();
         }
         spriteBatch.dispose();
         skin.dispose();
-        textureManager.dispose();
+
         if (currentBackgroundMusic != null) {
             currentBackgroundMusic.dispose();
         }

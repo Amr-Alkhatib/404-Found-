@@ -237,7 +237,6 @@ public class GameMap {
         traps.forEach(Trap::dispose);
         morphTraps.forEach(MorphTrap::dispose); // ← Dispose MorphTrap
         exits.forEach(Exit::dispose);
-        enemies.forEach(Enemy::dispose);
         hearts.forEach(Heart::dispose);
         if (entrance != null) entrance.dispose();
         if (player != null) player.dispose();

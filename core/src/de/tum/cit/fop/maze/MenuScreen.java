@@ -88,10 +88,10 @@ public class MenuScreen implements Screen {
         mainTable.add(titleGroup).padBottom(-80).row();
 
         // 在 MenuScreen.java 中确保使用正确的总分数
-        Label totalScoreLabel = new Label("Total Score: " + game.getTotalScore(), game.getSkin());
-        totalScoreLabel.setFontScale(1.5f);
-        totalScoreLabel.setColor(com.badlogic.gdx.graphics.Color.WHITE);
-        mainTable.add(totalScoreLabel).padBottom(30).row();
+       // Label totalScoreLabel = new Label("Total Score: " + game.getTotalScore(), game.getSkin());
+      //  totalScoreLabel.setFontScale(1.5f);
+      //  totalScoreLabel.setColor(com.badlogic.gdx.graphics.Color.WHITE);
+      //  mainTable.add(totalScoreLabel).padBottom(30).row();
 
         Texture buttonNormalTex = new Texture(Gdx.files.internal("assets/images/image_17.png"));
         Texture buttonHoverTex = new Texture(Gdx.files.internal("assets/images/image_18.png"));
@@ -201,6 +201,7 @@ public class MenuScreen implements Screen {
                 SaveSystem.clearSave();
 
                 game.goToGame("INFINITE_MODE");
+                game.IsInfiniteMode = true ;
             }
         });
 
@@ -211,7 +212,6 @@ public class MenuScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
 
                 SaveSystem.clearSave();
-                game.startInfiniteMode();
             }
         });
 

@@ -21,7 +21,6 @@ public class GameScreen implements Screen, InputProcessor {
     private float waitTimer = 0f;
     private static final float WAIT_BEFORE_NEXT_LEVEL = 2.0f;
     private final String originalMapLevel;
-
     private final MazeRunnerGame game;
     private final OrthographicCamera camera;
     private final String mapLevel;
@@ -37,7 +36,7 @@ public class GameScreen implements Screen, InputProcessor {
     private Sound keySound, heartSound, boostSound, trapSound, enemySound, playerSound, trapSound2;
     private Sound winScreenMusic, loseScreenMusic;
 
-    private final GameManager gameManager;
+    private GameManager gameManager;
     private Texture endScreenTexture;
     private boolean showingEndScreen = false;
 
@@ -45,88 +44,108 @@ public class GameScreen implements Screen, InputProcessor {
     private boolean shouldLoadSave = false;
 
     // ✅ FIX: Parameter umbenannt zu 'shouldLoadSave' und Logik angepasst
-    public GameScreen(MazeRunnerGame game, String mapLevel, boolean shouldLoadSave, String mapLevel1) {
+    public GameScreen(MazeRunnerGame game, String mapLevel, boolean shouldLoadSave) {
         this.game = game;
         this.originalMapLevel = mapLevel;
-        this.mapLevel = mapLevel1;
-
+        this.mapLevel = mapLevel;
         // ✅ NEU: Wir merken uns, ob wir laden sollen
         this.shouldLoadSave = shouldLoadSave;
 
         camera = new OrthographicCamera();
         camera.setToOrtho(false);
 
-        String actualMapFile;
-        if ("INFINITE_MODE".equals(this.originalMapLevel)) {
-            actualMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 15, 5, 3, 2);
-            System.out.println("Infinite Mode: Generated initial map: " + actualMapFile);
+        // 根据 mapLevel 决定如何加载
+        if ("INFINITE_MODE".equals(mapLevel)) {
+            // 对于无限模式，先创建一个临时或空的地图结构，然后立即加载第一张生成的地图
+            // 我们延迟核心加载逻辑到 loadMapCore
+            // 初始化 gameMap 为 null 或一个非常基础的实例，直到 loadMapCore 被调用
+            this.gameMap = null; // 暂时为 null，等待 loadMapCore
+            // 玩家也暂时为 null
+            this.player = null;
+            // 设置一些基本的 HUD 和 GameManager 占位符
+            // (这里可能会比较麻烦，因为 HUD 和 GameManager 需要 gameMap)
+            // 更好的方式是在 MazeRunnerGame 中生成第一张地图，然后传递给 GameScreen 构造函数
+            // 但现在我们保持现有流程，构造函数后立即调用 loadMapCore
+            // 假设 MazeRunnerGame.goToGame("INFINITE_MODE") 会立即导致 GameScreen 被设置，
+            // 然后 MazeRunnerGame.goToNextInfiniteLevel() 会被调用。
+            // 因此，GameScreen 构造函数只需初始化基本成员，真正的加载留给 loadMapCore。
+            // 这里我们仍然需要调用 loadMapCore 来完成初始化。
+            String initialMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 20, 5, 3, 2);
+            if (initialMapFile == null) {
+                Gdx.app.error("GameScreen", "Failed to generate initial map in constructor. Cannot proceed.");
+                // 应该有更优雅的错误处理，比如设置一个错误标志
+                // 并在 render 中检查，然后跳转回菜单
+                this.gameMap = new GameMap("maps/level-1.properties"); // 使用默认地图作为后备
+            } else {
+                loadMapCore(initialMapFile); // 完成初始化
+            }
         } else {
-            actualMapFile = mapLevel1;
+            // 对于普通关卡，使用原有逻辑
+            this.gameMap = new GameMap(mapLevel);
+            var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+            int upKey = prefs.getInteger("key_up", Input.Keys.W);
+            int downKey = prefs.getInteger("key_down", Input.Keys.S);
+            int leftKey = prefs.getInteger("key_left", Input.Keys.A);
+            int rightKey = prefs.getInteger("key_right", Input.Keys.D);
+            int sprintKey = prefs.getInteger("key_sprint", Input.Keys.SHIFT_LEFT);
+
+            float startX = gameMap.getPlayerStartX();
+            float startY = gameMap.getPlayerStartY();
+            if (startX == -1 || startY == -1) {
+                startX = 0;
+                startY = 0;
+            }
+            setupAudio(); // 这会为普通关卡设置音乐
+            player = new GameCharacter(startX, startY, upKey, downKey, leftKey, rightKey);
+            gameMap.setPlayer(player);
+            hud = new Hud(gameMap, new ScreenViewport());
+            gameManager = new GameManager(
+                    gameMap, game, this, player, hud,
+                    gameMap.getWalls(), gameMap.getEnemies(), gameMap.getKeys(),
+                    gameMap.getTraps(), gameMap.getEntrance(), gameMap.getExits(),
+                    gameMap.getHearts(), gameMap.getBoosts(), gameMap.getMorphTraps(),
+                    gameMap.getExitArrow(), sprintKey
+            );
+
+            aspectRatio = (float) Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
+            camera.setToOrtho(false);
+            camera.viewportHeight = tileSize * tilesVisibleY;
+            camera.viewportWidth = camera.viewportHeight * aspectRatio;
+            updateCamera();
         }
-        gameMap = new GameMap(actualMapFile);
-
-        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
-        int upKey = prefs.getInteger("key_up", Input.Keys.W);
-        int downKey = prefs.getInteger("key_down", Input.Keys.S);
-        int leftKey = prefs.getInteger("key_left", Input.Keys.A);
-        int rightKey = prefs.getInteger("key_right", Input.Keys.D);
-        int sprintKey = prefs.getInteger("key_sprint", Input.Keys.SHIFT_LEFT);
-
-        float startX = gameMap.getPlayerStartX();
-        float startY = gameMap.getPlayerStartY();
-        if (startX == -1 || startY == -1) {
-            startX = 0;
-            startY = 0;
-        }
-
-        setupAudio();
-
-        player = new GameCharacter(startX, startY, upKey, downKey, leftKey, rightKey);
-        gameMap.setPlayer(player);
-
-        hud = new Hud(gameMap, new ScreenViewport());
-
-        gameManager = new GameManager(
-                gameMap, game, this, player, hud,
-                gameMap.getWalls(), gameMap.getEnemies(), gameMap.getKeys(),
-                gameMap.getTraps(), gameMap.getEntrance(), gameMap.getExits(),
-                gameMap.getHearts(), gameMap.getBoosts(), gameMap.getMorphTraps(),
-                gameMap.getExitArrow(), sprintKey
-        );
-
-        aspectRatio = (float) Gdx.graphics.getWidth() / (float) Gdx.graphics.getHeight();
-        camera.setToOrtho(false);
-        camera.viewportHeight = tileSize * tilesVisibleY;
-        camera.viewportWidth = camera.viewportHeight * aspectRatio;
-        updateCamera();
-
-        // HINWEIS: Hier KEIN Laden mehr! Das passiert jetzt in show().
     }
 
-    public GameScreen(MazeRunnerGame game, String mapLevel, boolean shouldLoadSave) {
-        this(game, mapLevel, shouldLoadSave, mapLevel);
-    }
 
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
 
+        if (gameMap == null) { // 如果地图未初始化，显示错误或返回菜单
+            Gdx.app.log("GameScreen", "GameMap is null, returning to menu.");
+            game.goToMenu();
+            return;
+        }
+
+        // 检查是否正在等待加载下一关
         if (waitingForNextLevel) {
             waitTimer -= delta;
             if (waitTimer <= 0) {
                 waitingForNextLevel = false;
-                loadNextInfiniteLevel();
+                // 在这里，理论上 loadMapCore 已经被 MazeRunnerGame.goToNextInfiniteLevel 调用
+                // 所以我们只需要确保游戏状态继续即可
+                // 不需要在这里再次生成或加载
+                // 确保 win/lose 状态被重置（这通常在 loadMapCore 中的 GameManager 重新创建时完成）
+                // 如果 GameManager 有特定的重置方法，可以在这里调用
+                if (gameManager != null) {
+                    gameManager.resetAfterLevelTransition(); // 确保状态重置
+                }
+                // 不再需要生成新地图或创建新 GameScreen
             }
-            if (!showingEndScreen) {
-                game.getSpriteBatch().setProjectionMatrix(camera.combined);
-                renderGameWorld(delta);
-                hud.update();
-                hud.getStage().act(delta);
-                hud.draw();
-            }
-            return;
+            // 如果仍在等待，绘制等待界面或什么都不做，直到计时器结束
+            // 这里可以选择显示一个过渡效果
         }
 
+        // 如果仍在显示结束画面，就不渲染游戏世界
         if (showingEndScreen) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
                 game.goToMenu();
@@ -138,76 +157,157 @@ public class GameScreen implements Screen, InputProcessor {
                 game.getSpriteBatch().end();
                 game.getSpriteBatch().setProjectionMatrix(camera.combined);
             }
-            return;
+            return; // 仍在结束画面，直接返回
         }
 
+        // --- 主要游戏循环 ---
         updateCamera();
-        gameManager.update(delta);
+        if (gameManager != null) {
+            gameManager.update(delta);
+        }
 
-        if (gameManager.isLose() && !showingEndScreen) {
-            if ("INFINITE_MODE".equals(originalMapLevel)) {
-                int score = (int) gameManager.getTimePlayed();
-                game.addInfiniteModeScore(score);
-            }
-            showEndScreen("assets/images/gameOver.png");
-        } else if (gameManager.isWin() && !showingEndScreen) {
-            if ("INFINITE_MODE".equals(originalMapLevel)) {
-                waitingForNextLevel = true;
-                waitTimer = WAIT_BEFORE_NEXT_LEVEL;
-                if (winScreenMusic != null) winScreenMusic.play();
-            } else {
-                showEndScreen("assets/images/win.png");
+        // 检查胜负状态（现在应该只在 !showingEndScreen 且 !waitingForNextLevel 时检查）
+        if (gameManager != null) {
+            if (gameManager.isLose() && !showingEndScreen) {
+                if ("INFINITE_MODE".equals(originalMapLevel)) {
+                    int score = (int) gameManager.getTimePlayed();
+                    game.addInfiniteModeScore(score);
+                }
+                showEndScreen("assets/images/gameOver.png");
+            } else if (gameManager.isWin() && !showingEndScreen) {
+                if ("INFINITE_MODE".equals(originalMapLevel)) {
+                    // 重要：只在第一次 win 时设置 waitingForNextLevel
+                    if (!waitingForNextLevel) {
+                        waitingForNextLevel = true;
+                        waitTimer = WAIT_BEFORE_NEXT_LEVEL;
+                        if (winScreenMusic != null) winScreenMusic.play();
+                    }
+                    // 注意：不再在这里调用任何加载或切换屏幕的逻辑
+                    // 胜利状态的处理（如加载下一关）由 MazeRunnerGame.goToNextInfiniteLevel() 触发
+                } else {
+                    // 普通关卡的胜利处理
+                    showEndScreen("assets/images/win.png");
+                }
             }
         }
 
+        // 只有在非结束画面、非等待加载状态下才渲染游戏世界
         if (!showingEndScreen && !waitingForNextLevel) {
             game.getSpriteBatch().setProjectionMatrix(camera.combined);
             renderGameWorld(delta);
-            hud.update();
-            hud.getStage().act(delta);
-            hud.draw();
+            if (hud != null) {
+                hud.update();
+                hud.getStage().act(delta);
+                hud.draw();
+            }
         }
+        // --- 结束主要游戏循环 ---
     }
 
-    @Override
-    public void resize(int width, int height) {
-        aspectRatio = (float) width / (float) height;
-        camera.viewportHeight = tileSize * tilesVisibleY;
-        camera.viewportWidth = camera.viewportHeight * aspectRatio;
-        camera.update();
-        hud.getStage().getViewport().update(width, height, true);
+    // GameScreen.java 内部添加一个辅助方法
+    private void loadMapCore(String mapFile) {
+        if (mapFile == null) {
+            Gdx.app.error("GameScreen", "Cannot load map: mapFile is null.");
+            return;
+        }
+
+        // 1. 重新加载 GameMap 数据
+        GameMap newMap = null;
+        try {
+            newMap = new GameMap(mapFile);
+        } catch (Exception e) {
+            Gdx.app.error("GameScreen", "Failed to load map file: " + mapFile, e);
+            // 尝试返回菜单或处理错误
+            game.goToMenu(); // 或者触发失败状态
+            return;
+        }
+
+        // 2. 保存旧的音乐引用
+        Music oldMusic = this.backgroundMusic;
+
+        // 3. 获取输入键设置
+        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+        int upKey = prefs.getInteger("key_up", Input.Keys.W);
+        int downKey = prefs.getInteger("key_down", Input.Keys.S);
+        int leftKey = prefs.getInteger("key_left", Input.Keys.A);
+        int rightKey = prefs.getInteger("key_right", Input.Keys.D);
+        int sprintKey = prefs.getInteger("key_sprint", Input.Keys.SHIFT_LEFT);
+
+        // 4. 重置玩家位置（通常回到入口）
+        float startX = newMap.getPlayerStartX();
+        float startY = newMap.getPlayerStartY();
+        if (startX == -1 || startY == -1) {
+            startX = 0; // 或者一个默认安全点
+            startY = 0;
+        }
+        // 如果 player 对象不存在，则创建它；如果存在，则更新其位置
+        if (this.player == null) {
+            this.player = new GameCharacter(startX, startY, upKey, downKey, leftKey, rightKey);
+        } else {
+            this.player.setPosition(startX, startY);
+            // 重置玩家状态（例如生命值、冲刺等）
+            this.player.setHeartsCollected(3); // 假设初始生命值为3
+            // ... 重置其他状态 ...
+        }
+        newMap.setPlayer(this.player); // 确保新地图知道玩家对象
+
+        // 5. 重新设置音频
+        setupAudio(); // 这会停止并替换 backgroundMusic
+
+        // 6. 更新对新 GameMap 的引用
+        this.gameMap = newMap;
+
+        // 7. 重新创建 HUD
+        this.hud = new Hud(this.gameMap, new ScreenViewport());
+
+        // 8. 重新创建 GameManager，传入新的引用和重置的状态
+        // 注意：这里 GameManager 的状态（如 win/lose/timePlayed）会被重置
+        this.gameManager = new GameManager(
+                this.gameMap, game, this, this.player, this.hud,
+                this.gameMap.getWalls(), this.gameMap.getEnemies(), this.gameMap.getKeys(),
+                this.gameMap.getTraps(), this.gameMap.getEntrance(), this.gameMap.getExits(),
+                this.gameMap.getHearts(), this.gameMap.getBoosts(), this.gameMap.getMorphTraps(),
+                this.gameMap.getExitArrow(), sprintKey // 重新传入 sprintKey
+        );
+        // 9. 重置 HUD（可选，取决于 HUD 是否依赖于 GameManager 的状态）
+        this.hud.update();
+
+        // 10. 清理旧音乐
+        if (oldMusic != null && oldMusic != this.backgroundMusic) { // 确保不是同一个对象
+            oldMusic.stop();
+            oldMusic.dispose();
+        }
+
+        // 11. 重置结束画面和等待状态
+        this.showingEndScreen = false;
+        this.waitingForNextLevel = false;
+        this.waitTimer = 0f;
+
+        System.out.println("GameScreen: Reloaded map from " + mapFile);
     }
 
+    // 添加这个公共方法
+    public void reloadFromNewMap(String newMapPath) {
+        loadMapCore(newMapPath);
+        // 不需要重新设置 camera 视口大小等，除非尺寸改变了
+        // 如果需要，可以在 loadMapCore 末尾或这里添加 updateCamera();
+        updateCamera(); // 确保相机跟随玩家
+        System.out.println("GameScreen: Received command to reload from " + newMapPath);
+    }
+
+
     @Override
-    public void dispose() {
-        gameMap.dispose();
-        hud.getStage().dispose();
-        if (backgroundMusic != null) {
-            backgroundMusic.stop();
-            backgroundMusic.dispose();
-        }
-        if (keySound != null) keySound.dispose();
-        if (heartSound != null) heartSound.dispose();
-        if (boostSound != null) boostSound.dispose();
-        if (trapSound != null) trapSound.dispose();
-        if (enemySound != null) enemySound.dispose();
-        if (playerSound != null) playerSound.dispose();
-        if (winScreenMusic != null) winScreenMusic.dispose();
-        if (loseScreenMusic != null) loseScreenMusic.dispose();
-        if (trapSound2 != null) trapSound2.dispose();
+    public void resize(int i, int i1) {
     }
 
     @Override
     public void show() {
         // 1. Multiplexer erstellen (Kombiniert HUD und Spiel-Input)
         com.badlogic.gdx.InputMultiplexer multiplexer = new com.badlogic.gdx.InputMultiplexer();
-
         // Erst das HUD (damit Buttons Klicks abfangen können)
         multiplexer.addProcessor(hud.getStage());
-
         // Dann das Spiel (für ESC und WASD)
         multiplexer.addProcessor(this);
-
         // Den Multiplexer als Chef setzen
         Gdx.input.setInputProcessor(multiplexer);
 
@@ -246,7 +346,6 @@ public class GameScreen implements Screen, InputProcessor {
             backgroundMusic.stop();
             backgroundMusic.dispose();
         }
-
         switch (mapLevel) {
             case "maps/level-1.properties":
                 backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/level1.mp3"));
@@ -263,13 +362,13 @@ public class GameScreen implements Screen, InputProcessor {
         }
         var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
         float savedMusicVolume = prefs.getFloat("music_volume", 0.5f);
-
         backgroundMusic.setVolume(savedMusicVolume);
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
         winScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gamewin.mp3"));
         loseScreenMusic = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/gameover.mp3"));
+
         keySound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/key.mp3"));
         heartSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/heart.mp3"));
         boostSound = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/boostSpeed.mp3"));
@@ -292,7 +391,6 @@ public class GameScreen implements Screen, InputProcessor {
             case "trap2" -> trapSound2;
             default -> null;
         };
-
         if (sound != null) {
             var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
             float sfxVolume = prefs.getFloat("sfx_volume", 0.5f);
@@ -310,8 +408,10 @@ public class GameScreen implements Screen, InputProcessor {
     private void updateCamera() {
         if (player != null) {
             camera.position.set(
-                    Math.min(Math.max(player.getX() * tileSize + tileSize / 2, camera.viewportWidth / 2), gameMap.getWidth() * tileSize - camera.viewportWidth / 2),
-                    Math.min(Math.max(player.getY() * tileSize + tileSize / 2, camera.viewportHeight / 2), gameMap.getHeight() * tileSize - camera.viewportHeight / 2),
+                    Math.min(Math.max(player.getX() * tileSize + tileSize / 2, camera.viewportWidth / 2),
+                            gameMap.getWidth() * tileSize - camera.viewportWidth / 2),
+                    Math.min(Math.max(player.getY() * tileSize + tileSize / 2, camera.viewportHeight / 2),
+                            gameMap.getHeight() * tileSize - camera.viewportHeight / 2),
                     0
             );
         }
@@ -331,6 +431,15 @@ public class GameScreen implements Screen, InputProcessor {
     }
 
     @Override
+    public void dispose() {
+        // Optional: Clean up resources specific to GameScreen if needed.
+        // Note: Other resources like textures, music, etc., might be managed elsewhere or by LibGDX's lifecycle.
+        if (endScreenTexture != null) {
+            endScreenTexture.dispose();
+        }
+    }
+
+    @Override
     public void pause() {
         if (backgroundMusic != null) {
             backgroundMusic.pause();
@@ -344,22 +453,6 @@ public class GameScreen implements Screen, InputProcessor {
         }
     }
 
-    private boolean isInfiniteMode() {
-        return "INFINITE_MODE".equals(this.originalMapLevel);
-    }
-
-    public void onInfiniteModeLevelComplete() {
-        if (isInfiniteMode()) {
-            waitingForNextLevel = true;
-            waitTimer = WAIT_BEFORE_NEXT_LEVEL;
-
-            if (backgroundMusic != null) {
-                backgroundMusic.pause();
-            }
-            Gdx.app.log("GameScreen", "Infinite Mode: Level complete. Waiting to load next level.");
-        }
-    }
-
     public Music getBackgroundMusic() {
         return backgroundMusic;
     }
@@ -368,46 +461,9 @@ public class GameScreen implements Screen, InputProcessor {
         return gameManager;
     }
 
-    private void loadNextInfiniteLevel() {
-        Gdx.app.log("GameScreen", "Loading next infinite level...");
-        String newMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 15, 5, 3, 2);
-        if (newMapFile == null) {
-            Gdx.app.error("GameScreen", "Failed to generate next map for infinite mode");
-            return;
-        }
-        gameMap.reloadFrom(newMapFile);
-        float newStartX = gameMap.getPlayerStartX();
-        float newStartY = gameMap.getPlayerStartY();
-        if (newStartX == -1 || newStartY == -1) {
-            newStartX = 1;
-            newStartY = 1;
-        }
-        player.setX(newStartX);
-        player.setY(newStartY);
-        gameManager.onMapReloaded(
-                gameMap.getExits(), gameMap.getHearts(), gameMap.getKeys(),
-                gameMap.getTraps(), gameMap.getEnemies(), gameMap.getMorphTraps(),
-                gameMap.getExitArrow()
-        );
-        gameManager.updateExitArrowReference(gameMap.getExitArrow());
-        gameManager.resetAfterLevelTransition();
-
-        showingEndScreen = false;
-        if (endScreenTexture != null) {
-            endScreenTexture.dispose();
-            endScreenTexture = null;
-        }
-        waitingForNextLevel = false;
-        if (backgroundMusic != null) {
-            backgroundMusic.play();
-        }
-        Gdx.app.log("GameScreen", "Next level loaded successfully! Exiting end screen.");
-    }
-
     // ==========================================================
     // ✅ NEU: InputProcessor Methoden (Erforderlich für ESC!)
     // ==========================================================
-
     @Override
     public boolean keyDown(int keycode) {
         if (keycode == Input.Keys.ESCAPE) {

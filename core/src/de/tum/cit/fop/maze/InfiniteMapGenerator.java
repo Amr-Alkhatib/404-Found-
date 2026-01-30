@@ -5,27 +5,33 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
 
 public class InfiniteMapGenerator {
-
     private static final Random random = new Random();
     private static final String MAPS_DIR = "maps/";
+
     // NEW: Add a simple lock flag to prevent immediate consecutive calls
     private static boolean isGenerating = false;
+
     // NEW: Define constants for probability and cell types
     // NEW: Define wall probability for internal areas
     // A lower probability means fewer walls, more potential open space.
     // Needs tuning to balance maze structure and path availability.
     private static final double WALL_PROBABILITY = 0.28; // Adjusted probability
+
     // Values for different map entities
-    private static final int CELL_WALL = 0;   // Value for walls (this becomes 'null' in output)
-    private static final int CELL_START = 1;  // Value for Start
-    private static final int CELL_EXIT = 2;   // Value for Exit
-    private static final int CELL_TRAP = 4;   // Value for Trap
-    private static final int CELL_ENEMY = 5;  // Value for Enemy
+    private static final int CELL_WALL = 0; // Value for walls (this becomes 'null' in output)
+    private static final int CELL_START = 1; // Value for Start
+    private static final int CELL_EXIT = 2; // Value for Exit
+    private static final int CELL_TRAP = 4; // Value for Trap
+    private static final int CELL_ENEMY = 5; // Value for Enemy
     private static final int CELL_MORPH_TRAP = 6; // Value for Morph Trap
 
+    // Internal value for passable ground (will not be written to file)
+    private static final int CELL_GROUND_INTERNAL = -1;
 
     /**
      * Generates an infinite map string in the required format and saves it to a file.
@@ -35,6 +41,7 @@ public class InfiniteMapGenerator {
      * Ensures Start (1), Exit (2), and one Trap (4) are placed internally and far apart.
      * Outputs only non-zero (non-wall) cells to represent 'null' (passable) ground.
      * Includes a basic lock to prevent immediate consecutive calls.
+     * Adds connectivity verification between Start and Exit.
      *
      * @param width The width of the map grid.
      * @param height The height of the map grid.
@@ -50,7 +57,7 @@ public class InfiniteMapGenerator {
             return null; // Or handle differently as needed
         }
         isGenerating = true; // Set the lock
-        System.out.println("DEBUG: generateInfiniteMap called with width=" + width + ", height=" + height); // Keep debug print
+        System.out.println("DEBUG: generateInfiniteMap called with width=" + width + ", height=" + height);
 
         try { // Wrap main logic in try-finally to ensure lock is released
             Path mapsDirPath = Paths.get(MAPS_DIR);
@@ -63,80 +70,11 @@ public class InfiniteMapGenerator {
             }
 
             // NEW: Use a 2D array to build the map internally for easier manipulation
-            // Initialize the entire grid with 0 (wall).
-            int[][] mapGrid = new int[width][height]; // Default initialization is 0 for all elements
-
-            // 1. Ensure borders (value 0) are set - Top and Bottom
-            for (int x = 0; x < width; x++) {
-                mapGrid[x][0] = CELL_WALL; // Top border
-                mapGrid[x][height - 1] = CELL_WALL; // Bottom border
-            }
-
-            // Add borders (value 0) - Left and Right (excluding corners already added if needed, but setting anyway is fine)
-            for (int y = 0; y < height; y++) {
-                mapGrid[0][y] = CELL_WALL; // Left border
-                mapGrid[width - 1][y] = CELL_WALL; // Right border
-            }
-
-            // 2. Probabilistically place internal non-walls (i.e., set them to a value that represents passable ground, which is 'null' when outputting)
-            // We will set internal cells to 9 (or any non-zero, non-entity value) initially if they are not walls.
-            // Then, during output, we only write non-zero entity values (1, 2, 4, 5, 6).
-            // This means cells remaining as 0 (wall) or 9 (ground) will be 'null' in the output.
-            // Let's use 0 for walls and keep other entity values as is.
-            // So, we probabilistically *keep* internal cells as 0 (wall) or let them remain 0 (still wall) or change them to... wait.
-            // NO. The default is 0 (wall). We want to make some of them *not* walls (i.e., passable, represented by 'null').
-            // So, we iterate internal cells. If random < prob, keep as 0 (wall). Otherwise, set to a temporary "ground" value (e.g., 9).
-            // Actually, no need for a temp value. We just need to decide which internal cells become walls (0) and which stay as... what?
-            // The output logic says: if mapGrid[x][y] != 0, write it. This means 0 becomes 'null'.
-            // So, to make a cell passable ('null'), we LEAVE it as 0.
-            // To make a cell a wall, we SET it to 0.
-            // Wait, that's backwards. Let me re-read.
-            // "墙为0，路为null"
-            // Game logic parses the file. Unmentioned coordinates are 'null' -> passable.
-            // Coordinates mentioned like "x,y=0" mean that specific cell is a wall.
-            // So, to create a passable area, we do NOT put an entry for that x,y in the file.
-            // To create a wall, we DO put an entry like "x,y=0".
-            // Therefore, in our internal grid (mapGrid):
-            // - Boundary cells should end up as 0, so they get written as "x,y=0" -> wall.
-            // - Internal cells that should be walls need to be set to 0, so they get written as "x,y=0" -> wall.
-            // - Internal cells that should be passable (null) must REMAIN 0 initially, but then be skipped during output.
-            // - Entities (1, 2, 4, 5, 6) go into mapGrid, and get written.
-            // So, default int array value is 0. Boundaries -> set to 0 (already default, but set anyway for clarity).
-            // Internal cells -> If random < WALL_PROBABILITY -> set to 0 (to be written as wall). Else -> leave as 0 (to be skipped, representing null/passable).
-            // No, this is wrong again. If I leave internal cells as 0, they will be written because the output loop checks `if (mapGrid[x][y] != 0)`.
-            // Ah! I see the confusion. The *output condition* `if (mapGrid[x][y] != 0)` means only NON-ZERO values are written.
-            // So, if the *internal* grid has a 0, it represents a wall *internally*, but it will NOT be written to the file because `0 != 0` is false.
-            // This means internally 0 means wall, but outputting 0 makes it null!
-            // NO! The requirement is "墙为0". This means in the *output file*, a wall is represented by `x,y=0`.
-            // So, internally, a wall must also be 0, AND it must be written to the file.
-            // The output condition `if (mapGrid[x][y] != 0)` implies that internally, 0 means something that should NOT be written (i.e., passable/null).
-            // But the requirement "墙为0" contradicts this unless the game engine interprets the *presence* of `x,y=0` differently.
-            // Let's assume the output logic is fixed: ONLY non-zero values are written to the file.
-            // Then, for "路为null", internal value for passable ground must be 0 (so it's not written).
-            // For "墙为0", internal value for wall must be 0, but then it won't be written!
-            // This is a contradiction in the output format description vs. the requirement "墙为0".
-            // UNLESS: The game engine specifically looks for `x,y=0` and treats *that specific assignment* as a wall, while absence means passable.
-            // Yes, that seems to be the case based on the context and your statement.
-            // So:
-            // Internal Grid Value | Output File Entry | Game Interpretation
-            //         0           |    NOT WRITTEN    |      PASSABLE (null)
-            //         0           |   x,y=0 WRITTEN   |       WALL (!)
-            // Internal grid value 0 is ambiguous. We need a way to distinguish "internal ground (don't write)" from "internal wall (write as 0)".
-            // Option 1: Change output logic to write ALL cells, interpreting 0 as wall, non-0 as entity, maybe -1 as passable ground.
-            // Option 2: Keep output logic, make internal ground != 0, make internal wall = 0, make entities != 0 and != internal ground val.
-            // Option 2 seems less disruptive if output logic is fixed elsewhere.
-            // Let's use a different internal value for passable ground. How about -1? And keep wall as 0.
-            // Internal Ground = -1 -> Output: NOT written -> Game: null (passable)
-            // Internal Wall   =  0 -> Output: x,y=0 written -> Game: 0 (wall)
-            // Internal Entity =  1,2,4,5,6 -> Output: x,y=1,2,4,5,6 written -> Game: 1,2,4,5,6 (entity)
-            // This fits! Let's initialize grid with -1 (ground) and then set walls (0).
-
-            // Re-initialize the grid with -1 (representing passable ground internally)
-            int GROUND_VALUE = -1; // Internal value for passable ground (will not be written to file)
-            mapGrid = new int[width][height]; // Default is 0, need to set to -1 first
+            // Initialize the entire grid with CELL_GROUND_INTERNAL (-1) (representing passable ground internally)
+            int[][] mapGrid = new int[width][height];
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    mapGrid[x][y] = GROUND_VALUE;
+                    mapGrid[x][y] = CELL_GROUND_INTERNAL;
                 }
             }
 
@@ -145,7 +83,6 @@ public class InfiniteMapGenerator {
                 mapGrid[x][0] = CELL_WALL; // Top border -> wall
                 mapGrid[x][height - 1] = CELL_WALL; // Bottom border -> wall
             }
-
             // Add borders (value 0) - Left and Right (excluding corners already added if needed, but setting anyway is fine)
             for (int y = 0; y < height; y++) {
                 mapGrid[0][y] = CELL_WALL; // Left border -> wall
@@ -158,15 +95,15 @@ public class InfiniteMapGenerator {
                 for (int y = 1; y < height - 1; y++) {
                     // Generate random value and decide based on probability
                     // If random < WALL_PROBABILITY, place a wall (set to CELL_WALL which is 0)
-                    // Otherwise, leave as GROUND_VALUE (-1), which will not be written (becomes 'null')
+                    // Otherwise, leave as CELL_GROUND_INTERNAL (-1), which will not be written (becomes 'null')
                     if (random.nextDouble() < WALL_PROBABILITY) {
                         mapGrid[x][y] = CELL_WALL; // Place a wall (0)
                     }
-                    // Else, remains GROUND_VALUE (-1), will be skipped in output -> null/passable
+                    // Else, remains CELL_GROUND_INTERNAL (-1), will be skipped in output -> null/passable
                 }
             }
 
-            // 3. --- PLACE MANDATORY POINTS (1, 2, 4) FAR APART ---
+            // 3.1 --- PLACE MANDATORY POINTS (1, 2, 4) FAR APART ---
             // Minimum distance constraint
             int minDistance = Math.max(width, height) / 2;
             int start_x = -1, start_y = -1;
@@ -196,13 +133,117 @@ public class InfiniteMapGenerator {
             } while (
                     trap_x <= 0 || trap_x >= width - 1 || trap_y <= 0 || trap_y >= height - 1 || // Ensure internal
                             manhattanDistance(start_x, start_y, trap_x, trap_y) < minDistance || // Ensure distance from start
-                            manhattanDistance(exit_x, exit_y, trap_x, trap_y) < minDistance  // Ensure distance from exit
+                            manhattanDistance(exit_x, exit_y, trap_x, trap_y) < minDistance // Ensure distance from exit
             );
 
             // Add mandatory points to map grid (overwrites anything underneath)
             mapGrid[start_x][start_y] = CELL_START;
             mapGrid[exit_x][exit_y] = CELL_EXIT;
             mapGrid[trap_x][trap_y] = CELL_TRAP;
+
+            // 3.2 --- VERIFY PATH EXISTS BETWEEN START AND EXIT ---
+            // We need to ensure there's at least one path from Start to Exit.
+            // If not, we might need to adjust the map generation slightly or retry.
+
+            // First, temporarily treat the exit cell as ground for pathfinding purposes
+            // This avoids the pathfinder getting stuck thinking the exit itself is blocked.
+            int originalExitValue = mapGrid[exit_x][exit_y];
+            mapGrid[exit_x][exit_y] = CELL_GROUND_INTERNAL;
+
+            // Run pathfinding
+            boolean pathExists = hasPathBetween(mapGrid, start_x, start_y, exit_x, exit_y, width, height);
+
+            // Restore the exit value
+            mapGrid[exit_x][exit_y] = originalExitValue;
+
+            if (!pathExists) {
+                System.out.println("DEBUG: No direct path found from Start to Exit. Attempting minor adjustments...");
+
+                // Simple adjustment: try to carve a small path or connect via nearby cells
+                // This is a basic fix, you might want more sophisticated logic later
+                int attemptX = start_x, attemptY = start_y;
+                boolean connected = false;
+                // Try moving towards exit in steps, carving if necessary
+                while (attemptX != exit_x || attemptY != exit_y) {
+                    int dirX = Integer.compare(exit_x, attemptX);
+                    int dirY = Integer.compare(exit_y, attemptY);
+
+                    // Prefer moving in the direction of the exit
+                    int nextX = attemptX + (dirX != 0 ? dirX : (random.nextBoolean() ? 1 : -1));
+                    int nextY = attemptY + (dirY != 0 ? dirY : (random.nextBoolean() ? 1 : -1));
+
+                    // Ensure nextX, nextY are within bounds and not on border
+                    if (nextX > 0 && nextX < width - 1 && nextY > 0 && nextY < height - 1) {
+                        // Carve a path segment (make it ground/internal value -1)
+                        // Only carve if it's currently a wall (0)
+                        if (mapGrid[nextX][nextY] == CELL_WALL) {
+                            mapGrid[nextX][nextY] = CELL_GROUND_INTERNAL;
+                            System.out.println("DEBUG: Carved path segment at (" + nextX + "," + nextY + ")");
+                        }
+                        attemptX = nextX;
+                        attemptY = nextY;
+                        if (attemptX == exit_x && attemptY == exit_y) {
+                            connected = true;
+                            break;
+                        }
+                    } else {
+                        // Fallback: try a random neighbor if preferred direction is out of bounds
+                        int[] dirs = {-1, 0, 1};
+                        boolean carved = false;
+                        for (int dx : dirs) {
+                            for (int dy : dirs) {
+                                if (dx == 0 && dy == 0) continue;
+                                int nx = attemptX + dx;
+                                int ny = attemptY + dy;
+                                if (nx > 0 && nx < width - 1 && ny > 0 && ny < height - 1 && mapGrid[nx][ny] == CELL_WALL) {
+                                    mapGrid[nx][ny] = CELL_GROUND_INTERNAL;
+                                    System.out.println("DEBUG: Carved fallback path segment at (" + nx + "," + ny + ")");
+                                    attemptX = nx;
+                                    attemptY = ny;
+                                    carved = true;
+                                    break;
+                                }
+                            }
+                            if (carved) break;
+                        }
+                        if (!carved) {
+                            // If no neighbors are walls, move closer to exit along axes
+                            if (attemptX < exit_x) attemptX++;
+                            else if (attemptX > exit_x) attemptX--;
+                            if (attemptY < exit_y) attemptY++;
+                            else if (attemptY > exit_y) attemptY--;
+                        }
+                        if (attemptX == exit_x && attemptY == exit_y) {
+                            connected = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (connected) {
+                    System.out.println("DEBUG: Basic connection made, checking path again...");
+                    // Temporarily treat exit as ground again for final check
+                    mapGrid[exit_x][exit_y] = CELL_GROUND_INTERNAL;
+                    pathExists = hasPathBetween(mapGrid, start_x, start_y, exit_x, exit_y, width, height);
+                    // Restore the exit value again
+                    mapGrid[exit_x][exit_y] = originalExitValue;
+
+                    if (!pathExists) {
+                        System.out.println("WARNING: Even after adjustment, no path found. Generated map might be invalid.");
+                        // Consider returning null or trying again with different parameters
+                        // For now, we'll proceed with the adjusted map
+                    } else {
+                        System.out.println("DEBUG: Path found after adjustment.");
+                    }
+                } else {
+                    System.out.println("WARNING: Could not connect Start and Exit after adjustment attempts.");
+                    // Consider returning null or trying again
+                    // For now, proceed and hope the basic carving helped somewhat
+                }
+            } else {
+                System.out.println("DEBUG: Initial path found between Start and Exit.");
+            }
+
 
             // 4. --- PLACE EXTRA ENTITIES ---
             // Place extra Traps (value 4)
@@ -236,8 +277,8 @@ public class InfiniteMapGenerator {
             }
 
             // 5. Convert the 2D grid to the required string format and write to file
-            // Only write cells that have a value different from GROUND_VALUE (-1).
-            // This means cells with value GROUND_VALUE (-1) (open ground) will NOT appear in the file,
+            // Only write cells that have a value different from CELL_GROUND_INTERNAL (-1).
+            // This means cells with value CELL_GROUND_INTERNAL (-1) (open ground) will NOT appear in the file,
             // effectively making them 'null' or 'undefined' entries when parsed by the game engine.
             // Cells with value CELL_WALL (0) WILL appear in the file as "x,y=0", interpreted as walls.
             // Cells with other entity values (1,2,4,5,6) WILL appear in the file.
@@ -245,7 +286,7 @@ public class InfiniteMapGenerator {
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
                     // Only add to the string if the value is NOT the ground value (-1)
-                    if (mapGrid[x][y] != GROUND_VALUE) {
+                    if (mapGrid[x][y] != CELL_GROUND_INTERNAL) {
                         mapBuilder.append(x).append(",").append(y).append("=").append(mapGrid[x][y]).append("\n");
                     }
                 }
@@ -278,6 +319,86 @@ public class InfiniteMapGenerator {
      */
     private static int manhattanDistance(int x1, int y1, int x2, int y2) {
         return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
+
+    /**
+     * Checks if there is a path between two points using Breadth-First Search (BFS).
+     * Considers cells with value CELL_GROUND_INTERNAL (-1) and CELL_START (1), CELL_EXIT (2), etc. as passable.
+     * Considers CELL_WALL_INTERNAL (0) as impassable.
+     *
+     * @param mapGrid The internal representation of the map grid.
+     * @param startX X coordinate of the start point.
+     * @param startY Y coordinate of the start point.
+     * @param targetX X coordinate of the target point.
+     * @param targetY Y coordinate of the target point.
+     * @param width Width of the map grid.
+     * @param height Height of the map grid.
+     * @return True if a path exists, false otherwise.
+     */
+    private static boolean hasPathBetween(int[][] mapGrid, int startX, int startY, int targetX, int targetY, int width, int height) {
+        // Validate start and target coordinates
+        if (startX < 0 || startX >= width || startY < 0 || startY >= height ||
+                targetX < 0 || targetX >= width || targetY < 0 || targetY >= height) {
+            return false; // Coordinates out of bounds
+        }
+
+        // Check if start or target is a wall
+        // Note: We allow starting FROM the start or exit cell itself, so we check if it's a wall OTHER than start/exit
+        // However, for simplicity in pathfinding, we consider any non-wall cell passable.
+        // The critical check is if the target is passable at all.
+        if (mapGrid[startX][startY] == CELL_WALL || mapGrid[targetX][targetY] == CELL_WALL) {
+            // Allow pathfinding to start from the START/EXIT cell even if its value is 1/2,
+            // but if it's explicitly a wall (0), it's impassable.
+            // For this logic, since we place START/EXIT after generating walls, they override walls.
+            // So, if the value is CELL_WALL (0), it means it's definitely a wall.
+            // If it's CELL_START (1) or CELL_EXIT (2), it's passable.
+            // The pathfinding algorithm below handles CELL_START/CELL_EXIT as passable implicitly.
+            // However, if the START position somehow became a wall after placement due to logic errors,
+            // this check prevents finding a path. This is correct behavior.
+            if (mapGrid[startX][startY] == CELL_WALL) {
+                return false; // Start position is a wall
+            }
+            // We don't strictly need to check target being a wall if we want to find *to* it,
+            // but since we place it after generation, it shouldn't be a wall unless overwritten incorrectly.
+            // For robustness, we can still check it if it's meant to be passable upon reaching.
+            // For now, assuming 1,2,4,5,6 are passable to move onto, and 0 is not.
+            // Let's refine: Target needs to be a non-wall cell for path to be valid.
+            if (mapGrid[targetX][targetY] == CELL_WALL) {
+                return false; // Target position is a wall
+            }
+        }
+
+
+        boolean[][] visited = new boolean[width][height];
+        Queue<int[]> queue = new LinkedList<>();
+        queue.offer(new int[]{startX, startY});
+        visited[startX][startY] = true;
+
+        int[] dx = {-1, 1, 0, 0}; // Left, Right, Up, Down
+        int[] dy = {0, 0, -1, 1};
+
+        while (!queue.isEmpty()) {
+            int[] current = queue.poll();
+            int cx = current[0];
+            int cy = current[1];
+
+            if (cx == targetX && cy == targetY) {
+                return true; // Found the target
+            }
+
+            for (int i = 0; i < 4; i++) {
+                int nx = cx + dx[i];
+                int ny = cy + dy[i];
+
+                // Check bounds, not visited, and passable (not a wall)
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+                        !visited[nx][ny] && mapGrid[nx][ny] != CELL_WALL) {
+                    visited[nx][ny] = true;
+                    queue.offer(new int[]{nx, ny});
+                }
+            }
+        }
+        return false; // Target not reachable
     }
 
     // --- PRESERVE ANY EXISTING METHODS HERE ---

@@ -176,32 +176,23 @@ public class Enemy extends Obstacle {
      */
     public void update(float delta, List<Wall> walls, GameCharacter player) {
         if (!super.active) return; // Skip updates if the enemy is inactive
-
         stateTime += delta;
-
         tryChase(delta, walls, player);
-
-        updateAnimation();
+        updateAnimation(); // This will update currentFrame based on direction and stateTime
     }
 
     /**
      * Updates the animation frame based on the enemy's movement direction.
      */
     private void updateAnimation() {
-        switch (currentMovementDirection) {
-            case UP:
-                currentFrame = walkUpAnimation.getKeyFrame(stateTime);
-                break;
-            case DOWN:
-                currentFrame = walkDownAnimation.getKeyFrame(stateTime);
-                break;
-            case LEFT:
-                currentFrame = walkLeftAnimation.getKeyFrame(stateTime);
-                break;
-            case RIGHT:
-                currentFrame = walkRightAnimation.getKeyFrame(stateTime);
-                break;
-        }
+        // Ensure currentFrame is always assigned, even if animation is temporarily null
+        this.currentFrame = switch (currentMovementDirection) {
+            case UP -> walkUpAnimation != null ? walkUpAnimation.getKeyFrame(stateTime) : this.currentFrame; // Keep previous or fallback
+            case DOWN -> walkDownAnimation != null ? walkDownAnimation.getKeyFrame(stateTime) : this.currentFrame;
+            case LEFT -> walkLeftAnimation != null ? walkLeftAnimation.getKeyFrame(stateTime) : this.currentFrame;
+            case RIGHT -> walkRightAnimation != null ? walkRightAnimation.getKeyFrame(stateTime) : this.currentFrame;
+        };
+        // Fallback: If all animations were null somehow, currentFrame should already have the initial frame set in the constructor.
     }
 
 
@@ -210,7 +201,8 @@ public class Enemy extends Obstacle {
      */
     private static void loadTexturesAndAnimations() {
         if (enemyTexture == null) {
-            enemyTexture = new Texture(Gdx.files.internal("assets/mobs.png"));
+            // ✅ 从 TextureManager 获取，而不是自己 new
+            enemyTexture = TextureManager.mobsTexture;
 
             int animationFrames = 3;
             int frameWidth = enemyTexture.getWidth() / animationFrames;
@@ -249,7 +241,7 @@ public class Enemy extends Obstacle {
      * @param batch The {@code SpriteBatch} used for rendering.
      */
     public void render(SpriteBatch batch) {
-        if (super.active) {
+        if (super.active && currentFrame != null) { // Add null check for safety, although it shouldn't be null now
             batch.draw(currentFrame, x * 32, y * 32, 32, 32);
         }
     }
@@ -258,11 +250,5 @@ public class Enemy extends Obstacle {
     /**
      * Disposes of enemy textures.
      */
-    @Override
-    public void dispose() {
-        if (enemyTexture != null) {
-            enemyTexture.dispose();
-            enemyTexture = null;
-        }
-    }
+
 }

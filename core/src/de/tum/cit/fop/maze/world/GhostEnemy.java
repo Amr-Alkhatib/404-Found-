@@ -116,7 +116,8 @@ public class GhostEnemy extends Enemy {
      */
     @Override
     public void render(SpriteBatch batch) {
-        if (active) {
+        // 在绘制前检查 currentFrame 是否为 null
+        if (active && currentFrame != null) {
             batch.setColor(0, 1, 2, 1);
             batch.draw(currentFrame, x * 32, y * 32, 32, 32);
             batch.setColor(1, 1, 1, 1);

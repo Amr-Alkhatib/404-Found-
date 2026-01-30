@@ -46,7 +46,7 @@ public class GameManager {
     private final List<MorphTrap> morphTraps;
 
     private boolean lose = false;
-    private boolean win = false;
+    public static boolean win = false;
     private float timePlayed;
     private Label timer;
 
@@ -171,23 +171,20 @@ public class GameManager {
         if (!win) {
             win = true;
             canSaveOrLoad = false;
-
             int levelScore = calculateFinalScore();
-
             scoreManager.addScore(levelScore);
             scoreManager.finalizeScore();
-
-            if (game.getIsInfiniteMode()) {
+            if (game.IsInfiniteMode) {
+                // game 是 MazeRunnerGame
                 game.addInfiniteModeScore(levelScore);
-
-                // 🔴 FIX: reset session score for next level
                 totalHeartsCollectedThisSession = 0;
                 totalEnemiesKilledThisSession = 0;
-
-                gameScreen.onInfiniteModeLevelComplete();
-                return;
+                // ✅ 修改：不再在这里创建新 GameScreen
+                // game.setScreen(new GameScreen(game, "INFINITE_MODE", false));
+                // 而是通知 MazeRunnerGame 实例去处理下一关
+                game.goToNextInfiniteLevel(); // <--- 添加这行
+                return; // 提前返回，避免后续非无限模式的 win 处理
             }
-
             gameScreen.playSound("winscreen");
             gameScreen.showEndScreen("assets/images/victory.png");
         }
@@ -208,8 +205,8 @@ public class GameManager {
     public boolean tryWin() {
         if (win) return true;
         for (Exit exit : exits) {
-            if (Math.abs(player.getX() - exit.getX()) < 0.1f &&
-                    Math.abs(player.getY() - exit.getY()) < 0.1f) {
+            if (Math.abs(player.getX() - exit.getX()) < 0.2f &&
+                    Math.abs(player.getY() - exit.getY()) < 0.2) {
                 winGame();
                 return true;
             }
@@ -368,10 +365,6 @@ public class GameManager {
     }
 
     // 4. Alles zurücksetzen für das nächste Level
-    public void resetAfterLevelTransition() {
-        this.win = false;
-        this.lose = false;
-    }
 
     // ============================================================
     // NEU: HELFER MIT POSITIONEN (x,y,status)
@@ -533,5 +526,16 @@ public class GameManager {
                 Gdx.app.error("GameManager", "Fehler bei Item Restore Index " + i);
             }
         }
+    }
+    public void resetAfterLevelTransition() {
+        // 重置 win 和 lose 状态，以便下一关可以正常开始
+        win = false;
+        lose = false;
+        // 也可以重置时间，如果需要的话
+        timePlayed = 0f;
+        // 注意：分数相关的变量（如 totalHeartsCollectedThisSession）可能需要保留或重置，
+        // 取决于你想如何计算整个无限模式的分数。这里我们只重置状态。
+        // 如果 GameManager 有其他需要重置的临时状态，也应在此处重置。
+        System.out.println("GameManager: Reset win/lose states for next level.");
     }
 }
