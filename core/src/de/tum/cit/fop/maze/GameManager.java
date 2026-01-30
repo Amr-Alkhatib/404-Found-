@@ -208,8 +208,8 @@ public class GameManager {
     public boolean tryWin() {
         if (win) return true;
         for (Exit exit : exits) {
-            if (Math.abs(player.getX() - exit.getX()) < 0.1f &&
-                    Math.abs(player.getY() - exit.getY()) < 0.1f) {
+            if (Math.abs(player.getX() - exit.getX()) < 0.2f &&
+                    Math.abs(player.getY() - exit.getY()) < 0.2) {
                 winGame();
                 return true;
             }
