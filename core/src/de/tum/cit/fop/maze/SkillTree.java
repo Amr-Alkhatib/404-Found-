@@ -1,5 +1,8 @@
 package de.tum.cit.fop.maze;
 
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+
 public class SkillTree {
 
     private boolean speedUnlocked;

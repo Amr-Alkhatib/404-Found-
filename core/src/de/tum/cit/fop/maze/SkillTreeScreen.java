@@ -2,6 +2,7 @@ package de.tum.cit.fop.maze;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color; // WICHTIG: Import für die Farben
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -36,50 +37,55 @@ public class SkillTreeScreen implements Screen {
         table.setFillParent(true);
         stage.addActor(table);
 
-        // Titel & Score Anzeige
+        // Titel
         table.add(new Label("SKILL TREE", game.getSkin(), "title")).padBottom(20).row();
 
+        // Score Anzeige
         int currentScore = SaveSystem.loadTotalScore();
         scoreLabel = new Label("Points available: " + currentScore, game.getSkin());
         table.add(scoreLabel).padBottom(40).row();
 
         // --- SPEED BUTTON ---
-        String speedText = skillTree.hasSpeed() ? "Speed UNLOCKED" : "Buy Speed (500 Pts)";
-        TextButton speedBtn = new TextButton(speedText, game.getSkin());
-        speedBtn.setDisabled(skillTree.hasSpeed());
+        TextButton speedBtn = new TextButton("", game.getSkin());
+        // Sofort prüfen: Ist es schon gekauft? Farbe setzen!
+        updateButtonVisuals(speedBtn, skillTree.hasSpeed(), "Speed Boost", 500);
+
         speedBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (skillTree.unlockSpeed()) {
-                    updateUI(speedBtn, "Speed UNLOCKED");
+                    updateButtonVisuals(speedBtn, true, "Speed Boost", 500);
+                    updateScoreLabel(); // Score oben aktualisieren
                 }
             }
         });
         table.add(speedBtn).width(400).pad(10).row();
 
         // --- HEART BUTTON ---
-        String heartText = skillTree.hasHeart() ? "Extra Heart UNLOCKED" : "Buy Heart (1000 Pts)";
-        TextButton heartBtn = new TextButton(heartText, game.getSkin());
-        heartBtn.setDisabled(skillTree.hasHeart());
+        TextButton heartBtn = new TextButton("", game.getSkin());
+        updateButtonVisuals(heartBtn, skillTree.hasHeart(), "Extra Heart", 1000);
+
         heartBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (skillTree.unlockHeart()) {
-                    updateUI(heartBtn, "Extra Heart UNLOCKED");
+                    updateButtonVisuals(heartBtn, true, "Extra Heart", 1000);
+                    updateScoreLabel();
                 }
             }
         });
         table.add(heartBtn).width(400).pad(10).row();
 
         // --- GREED BUTTON ---
-        String greedText = skillTree.hasGreed() ? "x1.5 Score UNLOCKED" : "Buy Greed (1500 Pts)";
-        TextButton greedBtn = new TextButton(greedText, game.getSkin());
-        greedBtn.setDisabled(skillTree.hasGreed());
+        TextButton greedBtn = new TextButton("", game.getSkin());
+        updateButtonVisuals(greedBtn, skillTree.hasGreed(), "Greed (Score x1.5)", 1500);
+
         greedBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (skillTree.unlockGreed()) {
-                    updateUI(greedBtn, "x1.5 Score UNLOCKED");
+                    updateButtonVisuals(greedBtn, true, "Greed (Score x1.5)", 1500);
+                    updateScoreLabel();
                 }
             }
         });
@@ -96,9 +102,34 @@ public class SkillTreeScreen implements Screen {
         table.add(backBtn).padTop(50).width(300).row();
     }
 
-    private void updateUI(TextButton btn, String newText) {
-        btn.setText(newText);
-        btn.setDisabled(true);
+    /**
+     * Diese Methode kümmert sich um Farben und Text:
+     * - Grün/Active: Wenn schon gekauft.
+     * - Rot: Wenn zu teuer.
+     * - Weiß: Wenn kaufbar.
+     */
+    private void updateButtonVisuals(TextButton btn, boolean isUnlocked, String skillName, int cost) {
+        if (isUnlocked) {
+            btn.setText(skillName + " [ACTIVE]");
+            btn.getLabel().setColor(Color.GREEN);
+            btn.setDisabled(true); // Knopf deaktivieren, da schon gekauft
+        } else {
+            btn.setText("Buy " + skillName + " (" + cost + " Pts)");
+
+            int currentScore = SaveSystem.loadTotalScore();
+            if (currentScore >= cost) {
+                btn.getLabel().setColor(Color.WHITE); // Genug Geld -> Weiß
+                btn.setDisabled(false);
+            } else {
+                btn.getLabel().setColor(Color.RED);   // Zu arm -> Rot
+                // Wir lassen ihn aktiv, damit man klicken kann (passiert aber nichts, außer "Fail")
+                // oder du kannst btn.setDisabled(true) machen, wenn man gar nicht klicken können soll.
+                btn.setDisabled(false);
+            }
+        }
+    }
+
+    private void updateScoreLabel() {
         scoreLabel.setText("Points available: " + SaveSystem.loadTotalScore());
     }
 
