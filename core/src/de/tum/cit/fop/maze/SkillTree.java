@@ -17,7 +17,7 @@ public class SkillTree {
     }
 
     public boolean unlockSpeed() {
-        int cost = 500;
+        int cost = 1500;
         int currentScore = SaveSystem.loadTotalScore();
         if (currentScore >= cost && !speedUnlocked) {
             SaveSystem.saveTotalScore(currentScore - cost); // Bezahlen
@@ -29,7 +29,7 @@ public class SkillTree {
     }
 
     public boolean unlockHeart() {
-        int cost = 1000;
+        int cost = 3000;
         int currentScore = SaveSystem.loadTotalScore();
         if (currentScore >= cost && !heartUnlocked) {
             SaveSystem.saveTotalScore(currentScore - cost);
@@ -41,7 +41,7 @@ public class SkillTree {
     }
 
     public boolean unlockGreed() {
-        int cost = 1500;
+        int cost = 5000;
         int currentScore = SaveSystem.loadTotalScore();
         if (currentScore >= cost && !greedUnlocked) {
             SaveSystem.saveTotalScore(currentScore - cost);

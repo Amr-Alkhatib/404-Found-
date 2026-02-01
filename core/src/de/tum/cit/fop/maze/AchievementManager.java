@@ -45,7 +45,7 @@ public class AchievementManager {
             unlock(ACH_NOVICE);
         }
         // 2. Speed Runner: Unter 30 Sekunden
-        if (timeNeeded <= 30.0f) {
+        if (timeNeeded <= 15.0f) {
             unlock(ACH_SPEED_RUNNER);
         }
     }
@@ -55,21 +55,21 @@ public class AchievementManager {
         SaveSystem.addGlobalHearts(amountInLevel);
 
         // 3. Collector: Prüfen ob wir jetzt 100 haben
-        if (SaveSystem.getGlobalHearts() >= 100) {
+        if (SaveSystem.getGlobalHearts() >= 150) {
             unlock(ACH_COLLECTOR);
         }
     }
 
     public void onScoreUpdated(int currentTotalScore) {
         // 4. Millionaire: 5000 Punkte
-        if (currentTotalScore >= 5000) {
+        if (currentTotalScore >= 10000) {
             unlock(ACH_MILLIONAIRE);
         }
     }
 
     public void onInfiniteLevelReached(int levelNumber) {
         // 5. Survivor: Level 5 erreicht
-        if (levelNumber >= 5) {
+        if (levelNumber >= 10) {
             unlock(ACH_SURVIVOR);
         }
     }
