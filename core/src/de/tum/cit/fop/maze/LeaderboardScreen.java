@@ -53,7 +53,7 @@ public class LeaderboardScreen implements Screen {
             }
         }
 
-        TextButton backBtn = new TextButton("BACK TO MENU", game.getSkin());
+        TextButton backBtn = new TextButton("Back to Menu", game.getSkin());
         backBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
