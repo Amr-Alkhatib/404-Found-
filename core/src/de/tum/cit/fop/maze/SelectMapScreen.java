@@ -63,9 +63,9 @@ public class SelectMapScreen implements Screen {
 
         TextButton level1 = new TextButton("1", game.getSkin());
         TextButton level2 = new TextButton("2", game.getSkin());
-        TextButton level3 = new TextButton("2", game.getSkin());
-        TextButton level4 = new TextButton("3", game.getSkin());
-        TextButton level5 = new TextButton("4", game.getSkin());
+        TextButton level3 = new TextButton("3", game.getSkin());
+        TextButton level4 = new TextButton("4", game.getSkin());
+        TextButton level5 = new TextButton("5", game.getSkin());
         TextButton back = new TextButton("Back", game.getSkin());
 
 
