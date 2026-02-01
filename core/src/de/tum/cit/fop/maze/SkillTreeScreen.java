@@ -48,13 +48,13 @@ public class SkillTreeScreen implements Screen {
         // --- SPEED BUTTON ---
         TextButton speedBtn = new TextButton("", game.getSkin());
         // Sofort prüfen: Ist es schon gekauft? Farbe setzen!
-        updateButtonVisuals(speedBtn, skillTree.hasSpeed(), "Speed Boost", 500);
+        updateButtonVisuals(speedBtn, skillTree.hasSpeed(), "Speed Boost", 1500);
 
         speedBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (skillTree.unlockSpeed()) {
-                    updateButtonVisuals(speedBtn, true, "Speed Boost", 500);
+                    updateButtonVisuals(speedBtn, true, "Speed Boost", 1500);
                     updateScoreLabel(); // Score oben aktualisieren
                 }
             }
@@ -63,13 +63,13 @@ public class SkillTreeScreen implements Screen {
 
         // --- HEART BUTTON ---
         TextButton heartBtn = new TextButton("", game.getSkin());
-        updateButtonVisuals(heartBtn, skillTree.hasHeart(), "Extra Heart", 1000);
+        updateButtonVisuals(heartBtn, skillTree.hasHeart(), "Extra Heart", 3000);
 
         heartBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (skillTree.unlockHeart()) {
-                    updateButtonVisuals(heartBtn, true, "Extra Heart", 1000);
+                    updateButtonVisuals(heartBtn, true, "Extra Heart", 3000);
                     updateScoreLabel();
                 }
             }
@@ -78,13 +78,13 @@ public class SkillTreeScreen implements Screen {
 
         // --- GREED BUTTON ---
         TextButton greedBtn = new TextButton("", game.getSkin());
-        updateButtonVisuals(greedBtn, skillTree.hasGreed(), "Greed (Score x1.5)", 1500);
+        updateButtonVisuals(greedBtn, skillTree.hasGreed(), "Greed (Score x1.5)", 5000);
 
         greedBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (skillTree.unlockGreed()) {
-                    updateButtonVisuals(greedBtn, true, "Greed (Score x1.5)", 1500);
+                    updateButtonVisuals(greedBtn, true, "Greed (Score x1.5)", 5000);
                     updateScoreLabel();
                 }
             }

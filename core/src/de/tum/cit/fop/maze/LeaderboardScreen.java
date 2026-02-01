@@ -47,7 +47,7 @@ public class LeaderboardScreen implements Screen {
             // 显示前10名
             for (int i = 0; i < Math.min(scoresList.size(), 10); i++) {
                 String rank = (i + 1) + ". ";
-                String scoreText = rank + scoresList.get(i) + " seconds"; // ✅ 添加单位更清晰
+                String scoreText = rank + scoresList.get(i) + " Points"; // ✅ 添加单位更清晰
                 Label entry = new Label(scoreText, game.getSkin(), "default");
                 // 奖牌颜色
                 if (i == 0) entry.setColor(1, 0.8f, 0, 1);      // Gold

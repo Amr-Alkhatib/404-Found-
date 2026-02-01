@@ -236,8 +236,20 @@ public class GameManager {
     // SCORING
     // =========================
     public int calculateFinalScore() {
-        int baseScore = totalHeartsCollected * 100 + totalEnemiesKilled * 50;
+
+        int collectionScore = totalHeartsCollected * 25;
+        int maxTime = 60;
+        int timeBonus = (int) Math.max(0, (maxTime - timePlayed) * 5);
+
+        int survivorBonus = player.getHeartsCollected() * 50;
+        int baseScore = collectionScore + timeBonus + survivorBonus;
         baseScore *= skillTree.getScoreMultiplier();
+
+        Gdx.app.log("Score", "Collected: " + collectionScore +
+                " | TimeBonus: " + timeBonus +
+                " | Survivor: " + survivorBonus +
+                " | TOTAL: " + baseScore);
+
         return baseScore;
     }
 
