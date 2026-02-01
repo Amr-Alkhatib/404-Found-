@@ -13,7 +13,6 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -24,7 +23,6 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 /**
  * The MenuScreen class is responsible for displaying the main menu of the game.
- * It implements the LibGDX Screen interface and sets up the UI components for the menu.
  */
 public class MenuScreen implements Screen {
     private final MazeRunnerGame game;
@@ -32,36 +30,31 @@ public class MenuScreen implements Screen {
     private final Music menuMusic;
     private final TextButton infiniteModeButton;
 
-    /**
-     * Constructor for {@code MenuScreen}. Sets up the camera, viewport, stage, and UI elements.
-     *
-     * @param game The main game class, used to access global resources and methods.
-     */
     public MenuScreen(MazeRunnerGame game) {
         this.game = game;
         OrthographicCamera camera = new OrthographicCamera();
         Viewport viewport = new ScreenViewport(camera);
         stage = new Stage(viewport, game.getSpriteBatch());
 
+        // Musik Setup
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/background.mp3"));
         menuMusic.setLooping(true);
         var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
         float savedVolume = prefs.getFloat("music_volume", 0.5f);
-
         game.setCurrentBackgroundMusic(menuMusic);
         menuMusic.setVolume(savedVolume);
         menuMusic.play();
 
-
+        // Haupt-Tabelle für das Menü
         Table mainTable = new Table();
         mainTable.setFillParent(true);
         stage.addActor(mainTable);
 
-
+        // Hintergrund
         Image backgroundImage = new Image(new Texture(Gdx.files.internal("assets/images/2.png")));
         mainTable.setBackground(backgroundImage.getDrawable());
 
-        //Title
+        // Titel Animation
         float scaleFactor = 4.0f;
         Texture titleTexture = new Texture(Gdx.files.internal("assets/images/headline_menu.png"));
         Texture dotTexture = new Texture(Gdx.files.internal("assets/images/line_red_head_left.png"));
@@ -87,12 +80,7 @@ public class MenuScreen implements Screen {
         titleGroup.addActor(dotImage);
         mainTable.add(titleGroup).padBottom(-80).row();
 
-        // 在 MenuScreen.java 中确保使用正确的总分数
-       // Label totalScoreLabel = new Label("Total Score: " + game.getTotalScore(), game.getSkin());
-      //  totalScoreLabel.setFontScale(1.5f);
-      //  totalScoreLabel.setColor(com.badlogic.gdx.graphics.Color.WHITE);
-      //  mainTable.add(totalScoreLabel).padBottom(30).row();
-
+        // Button Styles
         Texture buttonNormalTex = new Texture(Gdx.files.internal("assets/images/image_17.png"));
         Texture buttonHoverTex = new Texture(Gdx.files.internal("assets/images/image_18.png"));
         Texture buttonPressedTex = new Texture(Gdx.files.internal("assets/images/image_19.png"));
@@ -105,7 +93,7 @@ public class MenuScreen implements Screen {
         customButtonStyle.down = drawablePressed;
         customButtonStyle.font = game.getSkin().getFont("font");
 
-
+        // 1. Quick Start
         TextButton goToGameButton = new TextButton("Quick Start", customButtonStyle);
         goToGameButton.padBottom(19);
         goToGameButton.addListener(new ChangeListener() {
@@ -117,22 +105,15 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(goToGameButton).width(300).height(60).pad(5).row();
 
+        // 2. Load Game
         TextButton loadGameButton = new TextButton("Load Game", customButtonStyle);
         loadGameButton.padBottom(19);
         loadGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // 1. NEU: Wir prüfen über das neue System, ob ein Spielstand existiert
                 if (SaveSystem.hasSaveGame()) {
-
-                    // 2. Wir holen uns den Namen des Levels, in dem wir waren
-                    // (Falls keiner gespeichert ist, nehmen wir level-1 als Sicherheit)
                     String levelToLoad = SaveSystem.getGameSave().getString("currentLevel", "maps/level-1.properties");
-
-                    // 3. WICHTIG: Wir rufen goToGame mit 'true' auf!
-                    // Das sagt dem GameScreen: "Bitte sofort nach dem Start die Herzen & Position laden!"
                     game.goToGame(levelToLoad, true);
-
                 } else {
                     System.out.println("Failed to load game. No save found.");
                 }
@@ -140,7 +121,7 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(loadGameButton).width(300).height(60).pad(5).row();
 
-
+        // 3. Select Map
         TextButton selectMap = new TextButton("Select Section", customButtonStyle);
         selectMap.padBottom(19);
         selectMap.addListener(new ChangeListener() {
@@ -152,16 +133,18 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(selectMap).width(300).height(60).pad(5).row();
 
-
+        // 4. Settings
         TextButton settingsButton = new TextButton("Settings", customButtonStyle);
         settingsButton.padBottom(19);
         settingsButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                 game.setScreen(new SettingsScreen(game));
+                game.setScreen(new SettingsScreen(game));
             }
         });
         mainTable.add(settingsButton).width(300).height(60).pad(5).row();
+
+        // 5. High Scores
         TextButton leaderboardButton = new TextButton("High Scores", customButtonStyle);
         leaderboardButton.padBottom(19);
         leaderboardButton.addListener(new ChangeListener() {
@@ -171,17 +154,33 @@ public class MenuScreen implements Screen {
             }
         });
         mainTable.add(leaderboardButton).width(300).height(60).pad(5).row();
-// --- 结束添加 ---
+
+        // ============================================================
+        // ✅ 6. NEU: SKILL TREE BUTTON
+        // ============================================================
+        TextButton skillsButton = new TextButton("Skill Tree", customButtonStyle);
+        skillsButton.padBottom(19);
+        skillsButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.goToSkillTree(); // Ruft die Methode in MazeRunnerGame auf
+            }
+        });
+        mainTable.add(skillsButton).width(300).height(60).pad(5).row();
+        // ============================================================
+
+        // 7. Credits
         TextButton credits = new TextButton("Acknowledgments", customButtonStyle);
         credits.padBottom(19);
         credits.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                 game.setScreen(new de.tum.cit.fop.maze.AcknowledgmentScreen(game));
+                game.setScreen(new de.tum.cit.fop.maze.AcknowledgmentScreen(game));
             }
         });
         mainTable.add(credits).width(300).height(60).pad(5).row();
 
+        // 8. Quit
         TextButton quit = new TextButton("Quit", customButtonStyle);
         quit.padBottom(19);
         quit.addListener(new ChangeListener() {
@@ -192,51 +191,31 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(quit).width(300).height(60).pad(5).row();
 
-
+        // --- INFINITE MODE BUTTON (Absolut positioniert) ---
         infiniteModeButton = new TextButton("Infinite Mode", customButtonStyle);
-        infiniteModeButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-
-                SaveSystem.clearSave();
-
-                game.goToGame("INFINITE_MODE");
-                game.IsInfiniteMode = true ;
-            }
-        });
-
-
         infiniteModeButton.setSize(200, 50);
         infiniteModeButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-
                 SaveSystem.clearSave();
+                // Check ob du 'IsInfiniteMode' oder 'isInfiniteMode' benutzt in MazeRunnerGame
+                // game.isInfiniteMode = true;
+                game.goToGame("INFINITE_MODE");
             }
         });
-
         stage.addActor(infiniteModeButton);
-
         updateInfiniteButtonPosition();
     }
 
     private void updateInfiniteButtonPosition() {
-
         if (infiniteModeButton == null) return;
         float screenWidth = stage.getViewport().getScreenWidth();
-        float screenHeight = stage.getViewport().getScreenHeight();
-
-
         float marginX = 20;
         float marginY = 20;
-
-
         float buttonX = screenWidth - infiniteModeButton.getWidth() - marginX;
         float buttonY = marginY;
-
         infiniteModeButton.setPosition(buttonX, buttonY);
     }
-
 
     @Override
     public void render(float delta) {
@@ -259,10 +238,8 @@ public class MenuScreen implements Screen {
 
     @Override
     public void hide() {}
-
     @Override
     public void pause() {}
-
     @Override
     public void resume() {}
 

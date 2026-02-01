@@ -2,30 +2,64 @@ package de.tum.cit.fop.maze;
 
 public class SkillTree {
 
-    // ===== Skills =====
-    private boolean extraHeartUnlocked = false;
-    private boolean scoreBoostUnlocked = false;
+    private boolean speedUnlocked;
+    private boolean heartUnlocked;
+    private boolean greedUnlocked;
 
-    // ===== Unlock logic =====
-    public void unlockExtraHeart() {
-        extraHeartUnlocked = true;
+    public SkillTree() {
+        // Beim Starten laden wir, was wir schon haben
+        this.speedUnlocked = SaveSystem.isSkillUnlocked("speed");
+        this.heartUnlocked = SaveSystem.isSkillUnlocked("heart");
+        this.greedUnlocked = SaveSystem.isSkillUnlocked("greed");
     }
 
-    public void unlockScoreBoost() {
-        scoreBoostUnlocked = true;
+    public boolean unlockSpeed() {
+        int cost = 500;
+        int currentScore = SaveSystem.loadTotalScore();
+        if (currentScore >= cost && !speedUnlocked) {
+            SaveSystem.saveTotalScore(currentScore - cost); // Bezahlen
+            speedUnlocked = true;
+            save(); // Speichern
+            return true; // Kauf erfolgreich
+        }
+        return false;
     }
 
-    // ===== Query =====
-    public boolean hasExtraHeart() {
-        return extraHeartUnlocked;
+    public boolean unlockHeart() {
+        int cost = 1000;
+        int currentScore = SaveSystem.loadTotalScore();
+        if (currentScore >= cost && !heartUnlocked) {
+            SaveSystem.saveTotalScore(currentScore - cost);
+            heartUnlocked = true;
+            save();
+            return true;
+        }
+        return false;
     }
 
-    public boolean hasScoreBoost() {
-        return scoreBoostUnlocked;
+    public boolean unlockGreed() {
+        int cost = 1500;
+        int currentScore = SaveSystem.loadTotalScore();
+        if (currentScore >= cost && !greedUnlocked) {
+            SaveSystem.saveTotalScore(currentScore - cost);
+            greedUnlocked = true;
+            save();
+            return true;
+        }
+        return false;
     }
 
-    // ===== Score modifier =====
+    private void save() {
+        SaveSystem.saveSkills(speedUnlocked, heartUnlocked, greedUnlocked);
+    }
+
+    // Getter für das Spiel
+    public boolean hasSpeed() { return speedUnlocked; }
+    public boolean hasHeart() { return heartUnlocked; }
+    public boolean hasGreed() { return greedUnlocked; }
+
+    // Hilfsmethode für den Multiplier
     public float getScoreMultiplier() {
-        return scoreBoostUnlocked ? 1.2f : 1.0f;
+        return greedUnlocked ? 1.5f : 1.0f;
     }
 }

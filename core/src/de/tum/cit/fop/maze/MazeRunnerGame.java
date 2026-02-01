@@ -371,4 +371,12 @@ public class MazeRunnerGame extends Game {
         // 5. Andere Screens schließen
         cleanupOtherScreens();
     }
+
+    public void goToSkillTree() {
+        setScreen(new SkillTreeScreen(this));
+        // cleanupOtherScreens(); // Falls du so eine Methode hast
+    }
+    public boolean getIsInfiniteMode() {
+        return this.isInfiniteMode;
+    }
 }

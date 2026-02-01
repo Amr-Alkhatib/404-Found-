@@ -101,4 +101,19 @@ public class SaveSystem {
         Collections.sort(scores, Collections.reverseOrder());
         return scores;
     }
+
+    // In SaveSystem.java
+
+    public static void saveSkills(boolean speed, boolean heart, boolean greed) {
+        Preferences prefs = Gdx.app.getPreferences("MazeRunnerSkills");
+        prefs.putBoolean("skill_speed", speed);
+        prefs.putBoolean("skill_heart", heart);
+        prefs.putBoolean("skill_greed", greed);
+        prefs.flush();
+    }
+
+    public static boolean isSkillUnlocked(String skillName) {
+        return Gdx.app.getPreferences("MazeRunnerSkills").getBoolean("skill_" + skillName, false);
+    }
 }
+

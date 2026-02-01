@@ -52,6 +52,7 @@ public final class GameCharacter extends MapElement {
     private float gainTime = Constants.characterPainGainTolerance;
     private float boostedTime = Constants.characterBoostLast;
     private float speedMultiplier = 1.0f;
+    private float skillMultiplier = 1.0f;
     private Animation<TextureRegion> walkUpAnimation;
     private Animation<TextureRegion> walkDownAnimation;
     private Animation<TextureRegion> walkLeftAnimation;
@@ -70,7 +71,7 @@ public final class GameCharacter extends MapElement {
     private boolean isAnimating = false;
     private float animationTime = 0f;
 
-    @Override
+
     protected float calculateSpeed(float delta) {
         float baseSpeed = Constants.characterBaseWalkingSpeed;
         if (boosted) {
@@ -79,7 +80,13 @@ public final class GameCharacter extends MapElement {
         if (sprinting) {
             baseSpeed *= Constants.characterRunningBoost;
         }
+
+        // Hier werden jetzt BEIDE Multiplier verrechnet:
+        // 1. speedMultiplier (für Fallen/Traps aus dem GameManager)
+        // 2. skillMultiplier (für deinen Skill Tree)
         baseSpeed *= speedMultiplier;
+        baseSpeed *= skillMultiplier; // ✅ NEU DAZU
+
         return baseSpeed * delta;
     }
 
@@ -89,6 +96,10 @@ public final class GameCharacter extends MapElement {
 
     public void setSpeedMultiplier(float multiplier) {
         this.speedMultiplier = multiplier;
+    }
+
+    public void applySpeedBoost() {
+        this.skillMultiplier = 1.2f; // Setzt den Speed dauerhaft auf 120%
     }
 
     public void boostWalking() {
@@ -257,4 +268,5 @@ public final class GameCharacter extends MapElement {
         batch.draw(frame, drawX, drawY, drawWidth, drawHeight);
         batch.setColor(1, 1, 1, 1);
     }
+
 }

@@ -1,13 +1,12 @@
 package de.tum.cit.fop.maze;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import de.tum.cit.fop.maze.world.*;
-
 import java.util.List;
+
 
 public class GameManager {
 
@@ -46,7 +45,7 @@ public class GameManager {
     private final List<MorphTrap> morphTraps;
 
     private boolean lose = false;
-    public static boolean win = false;
+    public boolean win = false;
     private float timePlayed;
     private Label timer;
 
@@ -96,6 +95,25 @@ public class GameManager {
         this.skillTree = new SkillTree();
 
         setupTimer();
+        // Im GameManager Konstruktor (ziemlich am Ende):
+
+// 1. SkillTree laden
+        SkillTree skills = new SkillTree();
+
+// 2. Extra Herz anwenden
+        if (skills.hasHeart()) {
+            player.setHeartsCollected(player.getHeartsCollected() + 1);
+            // Optional: Max-Herzen erhöhen, falls du ein Limit hast
+        }
+
+// 3. Speed anwenden
+        if (skills.hasSpeed()) {
+            player.applySpeedBoost(); // Die Methode aus Schritt A
+        }
+
+// 4. Score Boost ist schon in deiner calculateFinalScore() drin:
+// baseScore *= skillTree.getScoreMultiplier();
+// (Das hattest du schon im Code, perfekt!)
     }
 
     // =========================
@@ -171,20 +189,37 @@ public class GameManager {
         if (!win) {
             win = true;
             canSaveOrLoad = false;
+
+            // 1. Level-Score berechnen
             int levelScore = calculateFinalScore();
+
+            // 2. Highscore-Logik (ScoreManager)
             scoreManager.addScore(levelScore);
             scoreManager.finalizeScore();
-            if (game.IsInfiniteMode) {
-                // game 是 MazeRunnerGame
+
+            // 3. 🟢 NEU: Punkte auf das "Konto" überweisen (für den Skill Tree) 🟢
+            int currentTotalScore = SaveSystem.loadTotalScore();
+            SaveSystem.saveTotalScore(currentTotalScore + levelScore);
+            Gdx.app.log("GameManager", "Punkte erhalten: " + levelScore + ". Neuer Kontostand: " + (currentTotalScore + levelScore));
+
+            // 4. Infinite Mode Behandlung
+            if (game.getIsInfiniteMode()) {
+                // Score für Infinite History speichern
                 game.addInfiniteModeScore(levelScore);
+
+                // Session-Score für die nächste Runde resetten
                 totalHeartsCollectedThisSession = 0;
                 totalEnemiesKilledThisSession = 0;
-                // ✅ 修改：不再在这里创建新 GameScreen
-                // game.setScreen(new GameScreen(game, "INFINITE_MODE", false));
-                // 而是通知 MazeRunnerGame 实例去处理下一关
-                game.goToNextInfiniteLevel(); // <--- 添加这行
-                return; // 提前返回，避免后续非无限模式的 win 处理
+
+                // ✅ FIX: Nicht mehr hier neuen Screen erstellen, sondern MazeRunnerGame machen lassen
+                // Falls deine Methode in MazeRunnerGame "goToNextInfiniteLevel" heißt, nimm die.
+                // In deinem vorherigen Code hieß sie "continueInfiniteMode".
+                game.goToNextInfiniteLevel();
+
+                return; // WICHTIG: Hier rausgehen, damit kein Victory Screen kommt
             }
+
+            // 5. Normaler Victory Screen (nur im Story Modus)
             gameScreen.playSound("winscreen");
             gameScreen.showEndScreen("assets/images/victory.png");
         }
@@ -211,6 +246,7 @@ public class GameManager {
                 return true;
             }
         }
+
         return false;
     }
 
