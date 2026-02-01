@@ -8,22 +8,14 @@ import de.tum.cit.fop.maze.world.*;
 import java.util.List;
 
 public class GameManager {
-
-    // =========================
-    // 🔴 SCORING & ACHIEVEMENTS
-    // =========================
     private final ScoreManager scoreManager;
     private final AchievementManager achievementManager; // 🟢 NEU
 
     private int totalHeartsCollected = 0;
     private int totalEnemiesKilled = 0;
 
-    // =========================
-    // 🌳 SKILL TREE
-    // =========================
     private final SkillTree skillTree;
 
-    // 🔴 session-only score
     private int totalHeartsCollectedThisSession = 0;
     private int totalEnemiesKilledThisSession = 0;
 
@@ -88,17 +80,13 @@ public class GameManager {
 
         this.timePlayed = 0f;
 
-        // 🔴 ScoreManager init
         this.scoreManager = new ScoreManager();
         this.scoreManager.loadHighScore();
 
-        // 🏆 AchievementManager init (🟢 NEU)
         this.achievementManager = new AchievementManager();
 
-        // 🌳 SkillTree init & Anwendung
         this.skillTree = new SkillTree();
 
-        // Skills anwenden
         if (skillTree.hasHeart()) {
             player.setHeartsCollected(player.getHeartsCollected() + 1);
         }
@@ -109,12 +97,8 @@ public class GameManager {
         setupTimer();
     }
 
-    // =========================
-    // UPDATE
-    // =========================
     public void update(float delta) {
 
-        // 🔴 time-based score only while active
         if (!win && !lose) {
             scoreManager.updateTimeScore(delta);
         }
@@ -144,7 +128,6 @@ public class GameManager {
             tryLose();
         }
 
-        // Morph trap slow
         boolean onMorphTrap = false;
         float px = player.getX();
         float py = player.getY();
@@ -162,15 +145,11 @@ public class GameManager {
         player.setSpeedMultiplier(onMorphTrap ? 0.5f : 1.0f);
     }
 
-    // =========================
-    // GAME OVER / WIN
-    // =========================
     private void gameOver() {
         if (!lose) {
             lose = true;
             canSaveOrLoad = false;
 
-            // 🔴 finalize score on lose
             scoreManager.finalizeScore();
 
             gameScreen.playSound("losescreen");
@@ -185,56 +164,39 @@ public class GameManager {
 
             int levelScore = calculateFinalScore();
 
-            // 1. Highscore-Logik (ScoreManager)
             scoreManager.addScore(levelScore);
             scoreManager.finalizeScore();
 
-            // 2. 🟢 NEU: Punkte auf das "Konto" überweisen (für den Skill Tree)
             int currentTotalScore = SaveSystem.loadTotalScore();
             int newTotalScore = currentTotalScore + levelScore;
             SaveSystem.saveTotalScore(newTotalScore);
             Gdx.app.log("GameManager", "Punkte erhalten: " + levelScore + ". Neuer Kontostand: " + newTotalScore);
 
-            // ============================================
-            // 🏆 3. NEU: ACHIEVEMENT CHECKS
-            // ============================================
-
-            // Check: Zeit & Level geschafft
             String lvlPath = (gameMap.getLevelPath() != null) ? gameMap.getLevelPath() : "unknown";
             achievementManager.onLevelFinished(timePlayed, lvlPath);
 
-            // Check: Herzen (Session-Herzen werden zum Globalen addiert)
             achievementManager.onHeartsCollected(totalHeartsCollected);
 
-            // Check: Score (Millionaire)
             achievementManager.onScoreUpdated(newTotalScore);
-            // ============================================
 
 
-            // 4. Infinite Mode Behandlung
             if (game.getIsInfiniteMode()) {
-                // Score für Infinite History speichern
+
                 game.addInfiniteModeScore(levelScore);
 
-                // Session-Score für die nächste Runde resetten
                 totalHeartsCollectedThisSession = 0;
                 totalEnemiesKilledThisSession = 0;
 
-                // Weiterleitung über MazeRunnerGame
                 game.continueInfiniteMode();
 
-                return; // WICHTIG: Hier rausgehen, damit kein Victory Screen kommt
+                return;
             }
 
-            // 5. Normaler Victory Screen (nur im Story Modus)
             gameScreen.playSound("winscreen");
             gameScreen.showEndScreen("assets/images/victory.png");
         }
     }
 
-    // =========================
-    // SCORING
-    // =========================
     public int calculateFinalScore() {
 
         int collectionScore = totalHeartsCollected * 25;
@@ -253,9 +215,6 @@ public class GameManager {
         return baseScore;
     }
 
-    // =========================
-    // GAME LOGIC
-    // =========================
     public boolean tryWin() {
         if (win) return true;
         for (Exit exit : exits) {
@@ -361,9 +320,6 @@ public class GameManager {
         }
     }
 
-    // =========================
-    // UI
-    // =========================
     private String formatTime(float seconds) {
         int minutes = (int) seconds / 60;
         int secs = (int) seconds % 60;
@@ -385,9 +341,6 @@ public class GameManager {
         hud.getStage().addActor(timer);
     }
 
-    // =========================
-    // ACCESSORS
-    // =========================
     public ScoreManager getScoreManager() { return scoreManager; }
     public GameCharacter getPlayer() { return player; }
     public float getTimePlayed() { return timePlayed; }
@@ -422,10 +375,6 @@ public class GameManager {
         lose = false;
         timePlayed = 0f;
     }
-
-    // ============================================================
-    // HELFER MIT POSITIONEN
-    // ============================================================
 
     private String getItemDataString(List<? extends MapElement> list) {
         StringBuilder sb = new StringBuilder();
@@ -471,9 +420,6 @@ public class GameManager {
         return sb.toString();
     }
 
-    // ============================================================
-    // SPEICHERN
-    // ============================================================
     public void requestSaveGameState() {
         if (player == null) return;
         String currentLevel = gameMap.getLevelPath();
@@ -493,16 +439,12 @@ public class GameManager {
         );
     }
 
-    // ============================================================
-    // LADEN
-    // ============================================================
     public void requestLoadGameState() {
         if (!SaveSystem.hasSaveGame()) return;
         if (player == null) return;
 
         var prefs = SaveSystem.getGameSave();
 
-        // 1. Spieler & Zeit
         player.setHeartsCollected(prefs.getInteger("hearts", 3));
         float x = prefs.getFloat("playerX", 1f);
         float y = prefs.getFloat("playerY", 1f);
@@ -511,11 +453,9 @@ public class GameManager {
         this.timePlayed = prefs.getFloat("timePlayed", 0f);
         updateTimerDisplay();
 
-        // 2. Score Zähler
         this.totalHeartsCollected = prefs.getInteger("savedTotalHearts", 0);
         this.totalEnemiesKilled = prefs.getInteger("savedTotalEnemies", 0);
 
-        // 3. Alle Objekte
         restoreMapElements(keys, prefs.getString("keyData", ""));
         restoreMapElements(enemies, prefs.getString("enemyData", ""));
         restoreMapElements(hearts, prefs.getString("heartData", ""));

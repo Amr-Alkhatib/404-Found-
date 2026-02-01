@@ -35,25 +35,20 @@ public class AchievementsScreen implements Screen {
 
         mainTable.add(new Label("ACHIEVEMENTS", game.getSkin(), "title")).padBottom(30).row();
 
-        // Innere Tabelle für die Liste
         Table listTable = new Table();
 
         for (AchievementManager.Achievement ach : manager.getAchievements()) {
-            // Name
             Label nameLabel = new Label(ach.name, game.getSkin());
             nameLabel.setFontScale(1.2f);
 
-            // Status Text & Farbe
             String statusText = ach.unlocked ? "[UNLOCKED]" : "[LOCKED]";
             Label statusLabel = new Label(statusText, game.getSkin());
             statusLabel.setColor(ach.unlocked ? Color.GREEN : Color.RED);
 
-            // Beschreibung
             Label descLabel = new Label(ach.description, game.getSkin());
             descLabel.setFontScale(0.8f);
             descLabel.setColor(Color.LIGHT_GRAY);
 
-            // Layout der Zeile
             listTable.add(nameLabel).left().padRight(20);
             listTable.add(statusLabel).right().row();
             listTable.add(descLabel).left().colspan(2).padBottom(20).row();
@@ -61,10 +56,7 @@ public class AchievementsScreen implements Screen {
 
         ScrollPane scrollPane = new ScrollPane(listTable, game.getSkin());
 
-        // 🛠️ FIX 1: Scrollbar immer sichtbar machen
         scrollPane.setFadeScrollBars(false);
-        // Optional: Scrollbar immer 'aktiv' zeichnen, auch wenn nicht genug Inhalt da ist
-        // scrollPane.setForceScroll(false, true);
 
         mainTable.add(scrollPane).width(700).height(400).padBottom(20).row();
 
@@ -77,7 +69,6 @@ public class AchievementsScreen implements Screen {
         });
         mainTable.add(backBtn).width(200).height(50);
 
-        // 🛠️ FIX 2: Sofort den Fokus auf die Liste setzen, damit Mausrad geht
         stage.setScrollFocus(scrollPane);
     }
 
