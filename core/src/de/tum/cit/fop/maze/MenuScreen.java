@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -21,14 +22,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-/**
- * The MenuScreen class is responsible for displaying the main menu of the game.
- */
 public class MenuScreen implements Screen {
     private final MazeRunnerGame game;
     private final Stage stage;
     private final Music menuMusic;
-    private final TextButton infiniteModeButton;
 
     public MenuScreen(MazeRunnerGame game) {
         this.game = game;
@@ -45,16 +42,63 @@ public class MenuScreen implements Screen {
         menuMusic.setVolume(savedVolume);
         menuMusic.play();
 
-        // Haupt-Tabelle für das Menü
+        setupUI();
+    }
+
+    private void setupUI() {
+        // Button Styles vorbereiten
+        Texture buttonNormalTex = new Texture(Gdx.files.internal("assets/images/image_17.png"));
+        Texture buttonHoverTex = new Texture(Gdx.files.internal("assets/images/image_18.png"));
+        Texture buttonPressedTex = new Texture(Gdx.files.internal("assets/images/image_19.png"));
+        Drawable drawableNormal = new TextureRegionDrawable(new TextureRegion(buttonNormalTex));
+        Drawable drawableHover = new TextureRegionDrawable(new TextureRegion(buttonHoverTex));
+        Drawable drawablePressed = new TextureRegionDrawable(new TextureRegion(buttonPressedTex));
+        TextButton.TextButtonStyle customButtonStyle = new TextButton.TextButtonStyle();
+        customButtonStyle.up = drawableNormal;
+        customButtonStyle.over = drawableHover;
+        customButtonStyle.down = drawablePressed;
+        customButtonStyle.font = game.getSkin().getFont("font");
+
+        // Größe für die zentralen Buttons
+        float btnWidth = 320;
+        float btnHeight = 75;
+        float btnPad = 10;
+
+        // -----------------------------------------------------------
+        // 1. BACKGROUND
+        // -----------------------------------------------------------
+        Image backgroundImage = new Image(new Texture(Gdx.files.internal("assets/images/2.png")));
+        backgroundImage.setFillParent(true);
+        stage.addActor(backgroundImage);
+
+        // -----------------------------------------------------------
+        // 2. ECKE OBEN LINKS (Punkte) - Angepasst!
+        // -----------------------------------------------------------
+        Table pointsTable = new Table();
+        pointsTable.setFillParent(true);
+        pointsTable.top().left().pad(20); // Abstand vom Rand
+
+        int totalScore = SaveSystem.loadTotalScore();
+        // WICHTIG: Standardschriftart nutzen (kein "title")
+        Label scoreLabel = new Label("Points: " + totalScore, game.getSkin());
+        scoreLabel.setFontScale(1.2f); // Angenehme, kleinere Größe
+        pointsTable.add(scoreLabel);
+
+        stage.addActor(pointsTable);
+
+        // -----------------------------------------------------------
+        // 3. MAIN TABLE (Titel & Zentrale Buttons)
+        // -----------------------------------------------------------
         Table mainTable = new Table();
         mainTable.setFillParent(true);
+        mainTable.center();
+
+        // 🛠️ FIX 1: Alles hochschieben
+        mainTable.padBottom(200);
+
         stage.addActor(mainTable);
 
-        // Hintergrund
-        Image backgroundImage = new Image(new Texture(Gdx.files.internal("assets/images/2.png")));
-        mainTable.setBackground(backgroundImage.getDrawable());
-
-        // Titel Animation
+        // -- TITEL ANIMATION --
         float scaleFactor = 4.0f;
         Texture titleTexture = new Texture(Gdx.files.internal("assets/images/headline_menu.png"));
         Texture dotTexture = new Texture(Gdx.files.internal("assets/images/line_red_head_left.png"));
@@ -62,9 +106,11 @@ public class MenuScreen implements Screen {
         titleImage.setSize(titleTexture.getWidth() * scaleFactor, titleTexture.getHeight() * scaleFactor);
         Image dotImage = new Image(dotTexture);
         dotImage.setSize(dotTexture.getWidth() * scaleFactor, dotTexture.getHeight() * scaleFactor);
+
         Group titleGroup = new Group();
         titleGroup.setSize(titleImage.getWidth(), titleImage.getHeight());
         titleImage.setPosition(0, 0);
+
         float dotScale = scaleFactor * 0.7f;
         dotImage.setSize(dotTexture.getWidth() * dotScale, dotTexture.getHeight() * dotScale);
         float baseX = 55;
@@ -78,24 +124,16 @@ public class MenuScreen implements Screen {
         ));
         titleGroup.addActor(titleImage);
         titleGroup.addActor(dotImage);
-        mainTable.add(titleGroup).padBottom(-80).row();
 
-        // Button Styles
-        Texture buttonNormalTex = new Texture(Gdx.files.internal("assets/images/image_17.png"));
-        Texture buttonHoverTex = new Texture(Gdx.files.internal("assets/images/image_18.png"));
-        Texture buttonPressedTex = new Texture(Gdx.files.internal("assets/images/image_19.png"));
-        Drawable drawableNormal = new TextureRegionDrawable(new TextureRegion(buttonNormalTex));
-        Drawable drawableHover = new TextureRegionDrawable(new TextureRegion(buttonHoverTex));
-        Drawable drawablePressed = new TextureRegionDrawable(new TextureRegion(buttonPressedTex));
-        TextButton.TextButtonStyle customButtonStyle = new TextButton.TextButtonStyle();
-        customButtonStyle.up = drawableNormal;
-        customButtonStyle.over = drawableHover;
-        customButtonStyle.down = drawablePressed;
-        customButtonStyle.font = game.getSkin().getFont("font");
+        // 🛠️ FIX 2: Titel positionieren
+        // .padTop(100) -> Drückt den Titel wieder runter (weg vom oberen Rand)
+        // .padBottom(-50) -> Zieht die Buttons hoch zum Titel (ignoriert leere Pixel)
+        mainTable.add(titleGroup).padTop(100).padBottom(-50).row();
+
+        // -- ZENTRALE BUTTONS --
 
         // 1. Quick Start
         TextButton goToGameButton = new TextButton("Quick Start", customButtonStyle);
-        goToGameButton.padBottom(19);
         goToGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -103,11 +141,10 @@ public class MenuScreen implements Screen {
                 game.goToGame("maps/level-1.properties");
             }
         });
-        mainTable.add(goToGameButton).width(300).height(60).pad(5).row();
+        mainTable.add(goToGameButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
         // 2. Load Game
         TextButton loadGameButton = new TextButton("Load Game", customButtonStyle);
-        loadGameButton.padBottom(19);
         loadGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -115,15 +152,14 @@ public class MenuScreen implements Screen {
                     String levelToLoad = SaveSystem.getGameSave().getString("currentLevel", "maps/level-1.properties");
                     game.goToGame(levelToLoad, true);
                 } else {
-                    System.out.println("Failed to load game. No save found.");
+                    System.out.println("No save found.");
                 }
             }
         });
-        mainTable.add(loadGameButton).width(300).height(60).pad(5).row();
+        mainTable.add(loadGameButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 3. Select Map
+        // 3. Select Section
         TextButton selectMap = new TextButton("Select Section", customButtonStyle);
-        selectMap.padBottom(19);
         selectMap.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -131,90 +167,94 @@ public class MenuScreen implements Screen {
                 game.goToMap(false);
             }
         });
-        mainTable.add(selectMap).width(300).height(60).pad(5).row();
+        mainTable.add(selectMap).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
         // 4. Settings
         TextButton settingsButton = new TextButton("Settings", customButtonStyle);
-        settingsButton.padBottom(19);
         settingsButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 game.setScreen(new SettingsScreen(game));
             }
         });
-        mainTable.add(settingsButton).width(300).height(60).pad(5).row();
+        mainTable.add(settingsButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 5. High Scores
-        TextButton leaderboardButton = new TextButton("High Scores", customButtonStyle);
-        leaderboardButton.padBottom(19);
-        leaderboardButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new LeaderboardScreen(game));
-            }
-        });
-        mainTable.add(leaderboardButton).width(300).height(60).pad(5).row();
-
-        // ============================================================
-        // ✅ 6. NEU: SKILL TREE BUTTON
-        // ============================================================
-        TextButton skillsButton = new TextButton("Skill Tree", customButtonStyle);
-        skillsButton.padBottom(19);
-        skillsButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.goToSkillTree(); // Ruft die Methode in MazeRunnerGame auf
-            }
-        });
-        mainTable.add(skillsButton).width(300).height(60).pad(5).row();
-        // ============================================================
-
-        // 7. Credits
+        // 5. Acknowledgments
         TextButton credits = new TextButton("Acknowledgments", customButtonStyle);
-        credits.padBottom(19);
         credits.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 game.setScreen(new de.tum.cit.fop.maze.AcknowledgmentScreen(game));
             }
         });
-        mainTable.add(credits).width(300).height(60).pad(5).row();
+        mainTable.add(credits).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 8. Quit
+        // 6. Quit
         TextButton quit = new TextButton("Quit", customButtonStyle);
-        quit.padBottom(19);
         quit.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 Gdx.app.exit();
             }
         });
-        mainTable.add(quit).width(300).height(60).pad(5).row();
+        mainTable.add(quit).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // --- INFINITE MODE BUTTON (Absolut positioniert) ---
-        infiniteModeButton = new TextButton("Infinite Mode", customButtonStyle);
-        infiniteModeButton.setSize(200, 50);
+
+        // -----------------------------------------------------------
+        // 4. ECKE UNTEN LINKS (Skill Tree & Achievements)
+        // -----------------------------------------------------------
+        Table leftTable = new Table();
+        leftTable.setFillParent(true);
+        leftTable.bottom().left().pad(20);
+
+        TextButton skillsButton = new TextButton("Skill Tree", customButtonStyle);
+        skillsButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.goToSkillTree();
+            }
+        });
+        leftTable.add(skillsButton).width(260).height(65).padBottom(10).row();
+
+        TextButton achButton = new TextButton("Achievements", customButtonStyle);
+        achButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new AchievementsScreen(game));
+            }
+        });
+        leftTable.add(achButton).width(260).height(65);
+
+        stage.addActor(leftTable);
+
+
+        // -----------------------------------------------------------
+        // 5. ECKE UNTEN RECHTS (High Scores & Infinite Mode)
+        // -----------------------------------------------------------
+        Table rightTable = new Table();
+        rightTable.setFillParent(true);
+        rightTable.bottom().right().pad(20);
+
+        TextButton leaderboardButton = new TextButton("High Scores", customButtonStyle);
+        leaderboardButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new LeaderboardScreen(game));
+            }
+        });
+        rightTable.add(leaderboardButton).width(260).height(65).padBottom(10).row();
+
+        TextButton infiniteModeButton = new TextButton("Infinite Mode", customButtonStyle);
         infiniteModeButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 SaveSystem.clearSave();
-                // Check ob du 'IsInfiniteMode' oder 'isInfiniteMode' benutzt in MazeRunnerGame
-                // game.isInfiniteMode = true;
                 game.goToGame("INFINITE_MODE");
             }
         });
-        stage.addActor(infiniteModeButton);
-        updateInfiniteButtonPosition();
-    }
+        rightTable.add(infiniteModeButton).width(260).height(65);
 
-    private void updateInfiniteButtonPosition() {
-        if (infiniteModeButton == null) return;
-        float screenWidth = stage.getViewport().getScreenWidth();
-        float marginX = 20;
-        float marginY = 20;
-        float buttonX = screenWidth - infiniteModeButton.getWidth() - marginX;
-        float buttonY = marginY;
-        infiniteModeButton.setPosition(buttonX, buttonY);
+        stage.addActor(rightTable);
     }
 
     @Override
@@ -227,13 +267,11 @@ public class MenuScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
-        updateInfiniteButtonPosition();
     }
 
     @Override
     public void show() {
         Gdx.input.setInputProcessor(stage);
-        updateInfiniteButtonPosition();
     }
 
     @Override

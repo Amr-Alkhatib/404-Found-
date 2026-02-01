@@ -115,5 +115,30 @@ public class SaveSystem {
     public static boolean isSkillUnlocked(String skillName) {
         return Gdx.app.getPreferences("MazeRunnerSkills").getBoolean("skill_" + skillName, false);
     }
+
+    public static void unlockAchievement(String id) {
+        Preferences prefs = Gdx.app.getPreferences("MazeRunnerAchievements");
+        if (!prefs.getBoolean(id, false)) {
+            prefs.putBoolean(id, true);
+            prefs.flush();
+            Gdx.app.log("Achievement", "UNLOCKED: " + id);
+        }
+    }
+
+    public static boolean isAchievementUnlocked(String id) {
+        return Gdx.app.getPreferences("MazeRunnerAchievements").getBoolean(id, false);
+    }
+
+    // Speichert die Anzahl der gesammelten Herzen (Global)
+    public static void addGlobalHearts(int amount) {
+        Preferences prefs = Gdx.app.getPreferences("MazeRunnerStats");
+        int current = prefs.getInteger("total_hearts_collected", 0);
+        prefs.putInteger("total_hearts_collected", current + amount);
+        prefs.flush();
+    }
+
+    public static int getGlobalHearts() {
+        return Gdx.app.getPreferences("MazeRunnerStats").getInteger("total_hearts_collected", 0);
+    }
 }
 

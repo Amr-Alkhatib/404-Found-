@@ -7,13 +7,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import de.tum.cit.fop.maze.world.*;
 import java.util.List;
 
-
 public class GameManager {
 
     // =========================
-    // 🔴 SCORING
+    // 🔴 SCORING & ACHIEVEMENTS
     // =========================
     private final ScoreManager scoreManager;
+    private final AchievementManager achievementManager; // 🟢 NEU
 
     private int totalHeartsCollected = 0;
     private int totalEnemiesKilled = 0;
@@ -91,29 +91,22 @@ public class GameManager {
         // 🔴 ScoreManager init
         this.scoreManager = new ScoreManager();
         this.scoreManager.loadHighScore();
-        // 🌳 SkillTree init
+
+        // 🏆 AchievementManager init (🟢 NEU)
+        this.achievementManager = new AchievementManager();
+
+        // 🌳 SkillTree init & Anwendung
         this.skillTree = new SkillTree();
 
-        setupTimer();
-        // Im GameManager Konstruktor (ziemlich am Ende):
-
-// 1. SkillTree laden
-        SkillTree skills = new SkillTree();
-
-// 2. Extra Herz anwenden
-        if (skills.hasHeart()) {
+        // Skills anwenden
+        if (skillTree.hasHeart()) {
             player.setHeartsCollected(player.getHeartsCollected() + 1);
-            // Optional: Max-Herzen erhöhen, falls du ein Limit hast
+        }
+        if (skillTree.hasSpeed()) {
+            player.applySpeedBoost();
         }
 
-// 3. Speed anwenden
-        if (skills.hasSpeed()) {
-            player.applySpeedBoost(); // Die Methode aus Schritt A
-        }
-
-// 4. Score Boost ist schon in deiner calculateFinalScore() drin:
-// baseScore *= skillTree.getScoreMultiplier();
-// (Das hattest du schon im Code, perfekt!)
+        setupTimer();
     }
 
     // =========================
@@ -190,17 +183,33 @@ public class GameManager {
             win = true;
             canSaveOrLoad = false;
 
-            // 1. Level-Score berechnen
             int levelScore = calculateFinalScore();
 
-            // 2. Highscore-Logik (ScoreManager)
+            // 1. Highscore-Logik (ScoreManager)
             scoreManager.addScore(levelScore);
             scoreManager.finalizeScore();
 
-            // 3. 🟢 NEU: Punkte auf das "Konto" überweisen (für den Skill Tree) 🟢
+            // 2. 🟢 NEU: Punkte auf das "Konto" überweisen (für den Skill Tree)
             int currentTotalScore = SaveSystem.loadTotalScore();
-            SaveSystem.saveTotalScore(currentTotalScore + levelScore);
-            Gdx.app.log("GameManager", "Punkte erhalten: " + levelScore + ". Neuer Kontostand: " + (currentTotalScore + levelScore));
+            int newTotalScore = currentTotalScore + levelScore;
+            SaveSystem.saveTotalScore(newTotalScore);
+            Gdx.app.log("GameManager", "Punkte erhalten: " + levelScore + ". Neuer Kontostand: " + newTotalScore);
+
+            // ============================================
+            // 🏆 3. NEU: ACHIEVEMENT CHECKS
+            // ============================================
+
+            // Check: Zeit & Level geschafft
+            String lvlPath = (gameMap.getLevelPath() != null) ? gameMap.getLevelPath() : "unknown";
+            achievementManager.onLevelFinished(timePlayed, lvlPath);
+
+            // Check: Herzen (Session-Herzen werden zum Globalen addiert)
+            achievementManager.onHeartsCollected(totalHeartsCollected);
+
+            // Check: Score (Millionaire)
+            achievementManager.onScoreUpdated(newTotalScore);
+            // ============================================
+
 
             // 4. Infinite Mode Behandlung
             if (game.getIsInfiniteMode()) {
@@ -211,10 +220,8 @@ public class GameManager {
                 totalHeartsCollectedThisSession = 0;
                 totalEnemiesKilledThisSession = 0;
 
-                // ✅ FIX: Nicht mehr hier neuen Screen erstellen, sondern MazeRunnerGame machen lassen
-                // Falls deine Methode in MazeRunnerGame "goToNextInfiniteLevel" heißt, nimm die.
-                // In deinem vorherigen Code hieß sie "continueInfiniteMode".
-                game.goToNextInfiniteLevel();
+                // Weiterleitung über MazeRunnerGame
+                game.continueInfiniteMode();
 
                 return; // WICHTIG: Hier rausgehen, damit kein Victory Screen kommt
             }
@@ -275,7 +282,7 @@ public class GameManager {
                 player.loseHearts(1);
 
                 totalEnemiesKilled++;
-                totalEnemiesKilledThisSession++; // 🔴 FIX
+                totalEnemiesKilledThisSession++;
 
                 gameScreen.playSound("player");
                 return;
@@ -301,7 +308,7 @@ public class GameManager {
                 player.collectHeart();
 
                 totalHeartsCollected++;
-                totalHeartsCollectedThisSession++; // 🔴 FIX
+                totalHeartsCollectedThisSession++;
 
                 gameScreen.playSound("heart");
                 return;
@@ -381,33 +388,33 @@ public class GameManager {
     public List<MorphTrap> getMorphTraps() { return morphTraps; }
 
     public boolean isWin() {
-        return win; // Oder wie deine Variable für "Gewonnen" heißt
+        return win;
     }
 
     public boolean isLose() {
-        return lose; // Oder wie deine Variable für "Verloren" heißt
+        return lose;
     }
 
-    // 2. Infinite Mode: Wenn die Map neu geladen wird
     public void onMapReloaded(List<Exit> exits, List<Heart> hearts, List<Key> keys,
                               List<Trap> traps, List<Enemy> enemies,
                               List<MorphTrap> morphTraps, ExitArrow exitArrow) {
         this.exitArrow = exitArrow;
     }
 
-    // 3. Pfeil updaten
     public void updateExitArrowReference(ExitArrow exitArrow) {
         this.exitArrow = exitArrow;
     }
 
-    // 4. Alles zurücksetzen für das nächste Level
+    public void resetAfterLevelTransition() {
+        win = false;
+        lose = false;
+        timePlayed = 0f;
+    }
 
     // ============================================================
-    // NEU: HELFER MIT POSITIONEN (x,y,status)
+    // HELFER MIT POSITIONEN
     // ============================================================
 
-    // Generischer Helfer für Items (Keys, Hearts, Boosts)
-    // Format: "x,y,1;x,y,0" (1 = eingesammelt/weg, 0 = da)
     private String getItemDataString(List<? extends MapElement> list) {
         StringBuilder sb = new StringBuilder();
         for (MapElement elem : list) {
@@ -425,8 +432,6 @@ public class GameManager {
         return sb.toString();
     }
 
-    // Helfer für Fallen (Traps)
-    // Format: "x,y,1;x,y,0" (1 = aktiv/gefährlich, 0 = inaktiv)
     private String getTrapDataStringDetailed(List<? extends MapElement> list) {
         StringBuilder sb = new StringBuilder();
         for (MapElement elem : list) {
@@ -443,7 +448,6 @@ public class GameManager {
         return sb.toString();
     }
 
-    // Helfer für Gegner (wie gehabt)
     private String getEnemyDataString() {
         StringBuilder sb = new StringBuilder();
         for (Enemy e : enemies) {
@@ -456,7 +460,7 @@ public class GameManager {
     }
 
     // ============================================================
-    // SPEICHERN (Updated: Speichert ALLES inkl. Positionen und Scores)
+    // SPEICHERN
     // ============================================================
     public void requestSaveGameState() {
         if (player == null) return;
@@ -466,19 +470,19 @@ public class GameManager {
         SaveSystem.saveGame(
                 player.getHeartsCollected(), player.getX(), player.getY(), currentLevel,
                 this.timePlayed,
-                getItemDataString(keys),          // Keys mit Position
-                getEnemyDataString(),             // Gegner mit Position
-                getItemDataString(hearts),        // Herzen mit Position
-                getItemDataString(boosts),        // Boosts mit Position
-                getTrapDataStringDetailed(traps), // Fallen mit Position
-                getTrapDataStringDetailed(morphTraps), // MorphTraps mit Position
-                this.totalHeartsCollected,      // Score merken
-                this.totalEnemiesKilled         // Score merken
+                getItemDataString(keys),
+                getEnemyDataString(),
+                getItemDataString(hearts),
+                getItemDataString(boosts),
+                getTrapDataStringDetailed(traps),
+                getTrapDataStringDetailed(morphTraps),
+                this.totalHeartsCollected,
+                this.totalEnemiesKilled
         );
     }
 
     // ============================================================
-    // LADEN (Updated: Stellt Positionen und Scores wieder her)
+    // LADEN
     // ============================================================
     public void requestLoadGameState() {
         if (!SaveSystem.hasSaveGame()) return;
@@ -495,14 +499,13 @@ public class GameManager {
         this.timePlayed = prefs.getFloat("timePlayed", 0f);
         updateTimerDisplay();
 
-        // 2. Score Zähler wiederherstellen (WICHTIG!)
+        // 2. Score Zähler
         this.totalHeartsCollected = prefs.getInteger("savedTotalHearts", 0);
         this.totalEnemiesKilled = prefs.getInteger("savedTotalEnemies", 0);
 
-        // 3. ALLE OBJEKTE WIEDERHERSTELLEN
-        // Wir nutzen eine Helfer-Methode für alles, was MapElement ist
+        // 3. Alle Objekte
         restoreMapElements(keys, prefs.getString("keyData", ""));
-        restoreMapElements(enemies, prefs.getString("enemyData", "")); // Gegner nutzen gleiche Logik (x,y,status)
+        restoreMapElements(enemies, prefs.getString("enemyData", ""));
         restoreMapElements(hearts, prefs.getString("heartData", ""));
         restoreMapElements(boosts, prefs.getString("boostData", ""));
         restoreMapElements(traps, prefs.getString("trapData", ""));
@@ -513,65 +516,39 @@ public class GameManager {
         Gdx.app.log("GameManager", "Spielstand geladen: Alle Positionen & Scores korrigiert!");
     }
 
-    /**
-     * Die magische Methode, die alles wieder an den richtigen Platz schiebt.
-     */
     private void restoreMapElements(List<? extends MapElement> list, String data) {
         if (data == null || data.isEmpty()) return;
 
         String[] items = data.split(";");
-        // Wir gehen sicher, dass wir nicht über die Listengrenzen laufen
         for (int i = 0; i < items.length && i < list.size(); i++) {
             try {
-                String[] stats = items[i].split(","); // x, y, status
+                String[] stats = items[i].split(",");
                 float ex = Float.parseFloat(stats[0]);
                 float ey = Float.parseFloat(stats[1]);
-                boolean statusBool = stats[2].equals("1"); // 1 = eingesammelt/aktiv/tot (je nach Typ)
+                boolean statusBool = stats[2].equals("1");
 
                 MapElement elem = list.get(i);
-
-                // ZWINGT das Element an die gespeicherte Position
-                // Falls setPosition nicht geht, nimm: elem.setX(ex); elem.setY(ey);
                 elem.setPosition(ex, ey);
 
-                // Status wiederherstellen
                 if (elem instanceof Enemy) {
-                    if (!statusBool) ((Enemy)elem).deactivate(); // Bei Gegner: 0 = Tot (inaktiv)
-                    // (Anmerkung: Falls deine Logic "1 = tot" speichert, hier umdrehen.
-                    // Aber getEnemyDataString speichert isActive als "1", also ist !statusBool korrekt für tot)
+                    if (!statusBool) ((Enemy)elem).deactivate();
                 }
                 else if (elem instanceof Key) {
-                    if (statusBool) ((Key)elem).collect(); // Bei Key: 1 = Collected
+                    if (statusBool) ((Key)elem).collect();
                 }
                 else if (elem instanceof Heart) {
-                    if (statusBool) ((Heart)elem).collect(); // Bei Heart: 1 = Collected
+                    if (statusBool) ((Heart)elem).collect();
                 }
                 else if (elem instanceof Boost) {
-                    if (statusBool) ((Boost)elem).collect(); // Bei Boost: 1 = Collected
+                    if (statusBool) ((Boost)elem).collect();
                 }
                 else if (elem instanceof Trap) {
-                    if (!statusBool) ((Trap)elem).deactivate(); // Bei Trap: 1 = Aktiv. Wenn 0 -> aus.
-                }
-                else if (elem instanceof MorphTrap) {
-                    // MorphTrap Logik
-                    // Falls es Methoden gibt, hier anwenden.
-                    // z.B. if (!statusBool) ((MorphTrap)elem).deactivate();
+                    if (!statusBool) ((Trap)elem).deactivate();
                 }
 
             } catch (Exception e) {
                 Gdx.app.error("GameManager", "Fehler bei Item Restore Index " + i);
             }
         }
-    }
-    public void resetAfterLevelTransition() {
-        // 重置 win 和 lose 状态，以便下一关可以正常开始
-        win = false;
-        lose = false;
-        // 也可以重置时间，如果需要的话
-        timePlayed = 0f;
-        // 注意：分数相关的变量（如 totalHeartsCollectedThisSession）可能需要保留或重置，
-        // 取决于你想如何计算整个无限模式的分数。这里我们只重置状态。
-        // 如果 GameManager 有其他需要重置的临时状态，也应在此处重置。
-        System.out.println("GameManager: Reset win/lose states for next level.");
     }
 }
