@@ -49,20 +49,19 @@ During gameplay, pressing **Esc** pauses the game and opens the pause menu, wher
 ## Gameplay
 
 DancingLineMaze takes place in a maze consisting of traversable paths surrounded by walls.
-Multiple maps are available, each offering different layouts and increasing difficulty.
+Multiple maps are available, each offering different layouts and gameplay challenges.
 
 
 ## Game Mechanics
 
 - Maze-based navigation with walls and paths
 - Player movement with optional sprinting
-- Enemies that patrol and chase the player when nearby
+- Enemies with different movement and interaction behaviors
 - Static and dynamic traps that damage the player
 - Key-based exit unlocking system
-- Heads-Up Display (HUD) showing:
+- Heads-Up Display (HUD) showing player status information such as:
   - collected books (lives)
   - key status
-  - elapsed play time
   - exit direction indicator
 
 
@@ -85,7 +84,7 @@ Losing all books results in game over.
 
 ### Items
 - **Key of Knowledge** – Required to unlock the exit
-- **Speed Manuals** – Temporary speed boost items
+- **Speed Manuals** – Speed boost items
 
 
 ## Getting Started
