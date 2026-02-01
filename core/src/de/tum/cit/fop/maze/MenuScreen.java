@@ -46,7 +46,7 @@ public class MenuScreen implements Screen {
     }
 
     private void setupUI() {
-        // Button Styles vorbereiten
+        // --- BUTTON STYLES ---
         Texture buttonNormalTex = new Texture(Gdx.files.internal("assets/images/image_17.png"));
         Texture buttonHoverTex = new Texture(Gdx.files.internal("assets/images/image_18.png"));
         Texture buttonPressedTex = new Texture(Gdx.files.internal("assets/images/image_19.png"));
@@ -59,7 +59,6 @@ public class MenuScreen implements Screen {
         customButtonStyle.down = drawablePressed;
         customButtonStyle.font = game.getSkin().getFont("font");
 
-        // Größe für die zentralen Buttons
         float btnWidth = 320;
         float btnHeight = 75;
         float btnPad = 10;
@@ -72,16 +71,16 @@ public class MenuScreen implements Screen {
         stage.addActor(backgroundImage);
 
         // -----------------------------------------------------------
-        // 2. ECKE OBEN LINKS (Punkte) - Angepasst!
+        // 2. ECKE OBEN LINKS (Punkte)
         // -----------------------------------------------------------
         Table pointsTable = new Table();
         pointsTable.setFillParent(true);
-        pointsTable.top().left().pad(20); // Abstand vom Rand
+        pointsTable.top().left().pad(20);
 
         int totalScore = SaveSystem.loadTotalScore();
-        // WICHTIG: Standardschriftart nutzen (kein "title")
+        // Normale Schriftart, kein Title-Style
         Label scoreLabel = new Label("Points: " + totalScore, game.getSkin());
-        scoreLabel.setFontScale(1.2f); // Angenehme, kleinere Größe
+        scoreLabel.setFontScale(1.2f);
         pointsTable.add(scoreLabel);
 
         stage.addActor(pointsTable);
@@ -93,8 +92,8 @@ public class MenuScreen implements Screen {
         mainTable.setFillParent(true);
         mainTable.center();
 
-        // 🛠️ FIX 1: Alles hochschieben
-        mainTable.padBottom(200);
+        // Buttons global hochschieben
+        mainTable.padBottom(150);
 
         stage.addActor(mainTable);
 
@@ -125,23 +124,23 @@ public class MenuScreen implements Screen {
         titleGroup.addActor(titleImage);
         titleGroup.addActor(dotImage);
 
-        // 🛠️ FIX 2: Titel positionieren
-        // .padTop(100) -> Drückt den Titel wieder runter (weg vom oberen Rand)
-        // .padBottom(-50) -> Zieht die Buttons hoch zum Titel (ignoriert leere Pixel)
-        mainTable.add(titleGroup).padTop(100).padBottom(-50).row();
+        // TITEL POSITIONIERUNG
+        // padTop(120): Drückt Titel runter
+        // padBottom(30): Schafft Platz zwischen Titel und erstem Button
+        mainTable.add(titleGroup).padTop(120).padBottom(30).row();
 
         // -- ZENTRALE BUTTONS --
 
-        // 1. Quick Start
-        TextButton goToGameButton = new TextButton("Quick Start", customButtonStyle);
-        goToGameButton.addListener(new ChangeListener() {
+        // 1. START GAME (Führt zur Level-Auswahl)
+        TextButton startGameButton = new TextButton("Start Game", customButtonStyle);
+        startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 SaveSystem.clearSave();
-                game.goToGame("maps/level-1.properties");
+                game.goToMap(false); // Öffnet Level-Auswahl
             }
         });
-        mainTable.add(goToGameButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
+        mainTable.add(startGameButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
         // 2. Load Game
         TextButton loadGameButton = new TextButton("Load Game", customButtonStyle);
@@ -158,18 +157,9 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(loadGameButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 3. Select Section
-        TextButton selectMap = new TextButton("Select Section", customButtonStyle);
-        selectMap.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                SaveSystem.clearSave();
-                game.goToMap(false);
-            }
-        });
-        mainTable.add(selectMap).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
+        // (Select Section Button wurde entfernt, da jetzt in Start Game integriert)
 
-        // 4. Settings
+        // 3. Settings
         TextButton settingsButton = new TextButton("Settings", customButtonStyle);
         settingsButton.addListener(new ChangeListener() {
             @Override
@@ -179,7 +169,7 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(settingsButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 5. Acknowledgments
+        // 4. Acknowledgments
         TextButton credits = new TextButton("Acknowledgments", customButtonStyle);
         credits.addListener(new ChangeListener() {
             @Override
@@ -189,7 +179,7 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(credits).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 6. Quit
+        // 5. Quit
         TextButton quit = new TextButton("Quit", customButtonStyle);
         quit.addListener(new ChangeListener() {
             @Override

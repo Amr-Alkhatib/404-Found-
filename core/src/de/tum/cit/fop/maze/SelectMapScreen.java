@@ -58,7 +58,7 @@ public class SelectMapScreen implements Screen {
         table.setBackground(backgroundImage.getDrawable());
 
 
-        table.add(new Label("Select Section", game.getSkin(), "title")).padBottom(80).row();
+        table.add(new Label("Select Level", game.getSkin(), "title")).padBottom(80).row();
 
 
         TextButton level1 = new TextButton("1", game.getSkin());
