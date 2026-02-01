@@ -18,10 +18,8 @@ public class Wall extends MapElement {
 
     private void loadTextures() {
         if (texture == null) {
-            // Hier den neuen Namen deiner Datei eintragen!
             texture = new Texture(Gdx.files.internal("assets/wall.png"));
 
-            // Wir nehmen einfach das ganze Bild als Textur
             wallRegion = new TextureRegion(texture);
         }
     }

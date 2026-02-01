@@ -7,8 +7,6 @@ public final class Constants {
     private Constants() {
     }
 
-    // Character
-
     /**
      * How fast character walks
      */
@@ -44,9 +42,6 @@ public final class Constants {
      */
     public static final float characterBoostLast = 3f;
 
-
-    // Enemy
-
     /**
      * The speed at which the enemies move
      */
@@ -57,8 +52,6 @@ public final class Constants {
      */
     public static final int enemySightRange = 2;
 
-
-    // Collisions
 
     /**
      * The "precision" with which wall is to be avoided.

@@ -27,7 +27,7 @@ public class Enemy extends Obstacle {
     }
 
     public void activate() {
-        this.active = true; // 假设 'active' 字段用于表示敌人的活动状态
+        this.active = true;
     }
     /**
      * The texture from which frames and animations are loaded.
@@ -175,24 +175,22 @@ public class Enemy extends Obstacle {
      * @param player The player to be chased.
      */
     public void update(float delta, List<Wall> walls, GameCharacter player) {
-        if (!super.active) return; // Skip updates if the enemy is inactive
+        if (!super.active) return;
         stateTime += delta;
         tryChase(delta, walls, player);
-        updateAnimation(); // This will update currentFrame based on direction and stateTime
+        updateAnimation();
     }
 
     /**
      * Updates the animation frame based on the enemy's movement direction.
      */
     private void updateAnimation() {
-        // Ensure currentFrame is always assigned, even if animation is temporarily null
         this.currentFrame = switch (currentMovementDirection) {
             case UP -> walkUpAnimation != null ? walkUpAnimation.getKeyFrame(stateTime) : this.currentFrame; // Keep previous or fallback
             case DOWN -> walkDownAnimation != null ? walkDownAnimation.getKeyFrame(stateTime) : this.currentFrame;
             case LEFT -> walkLeftAnimation != null ? walkLeftAnimation.getKeyFrame(stateTime) : this.currentFrame;
             case RIGHT -> walkRightAnimation != null ? walkRightAnimation.getKeyFrame(stateTime) : this.currentFrame;
         };
-        // Fallback: If all animations were null somehow, currentFrame should already have the initial frame set in the constructor.
     }
 
 
@@ -201,7 +199,6 @@ public class Enemy extends Obstacle {
      */
     private static void loadTexturesAndAnimations() {
         if (enemyTexture == null) {
-            // ✅ 从 TextureManager 获取，而不是自己 new
             enemyTexture = TextureManager.mobsTexture;
 
             int animationFrames = 3;
@@ -245,10 +242,4 @@ public class Enemy extends Obstacle {
             batch.draw(currentFrame, x * 32, y * 32, 32, 32);
         }
     }
-
-
-    /**
-     * Disposes of enemy textures.
-     */
-
 }

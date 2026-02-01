@@ -20,7 +20,6 @@ public class Floor extends MapElement {
         loadTexture();
     }
 
-
     /**
      * The texture of the floor.
      */
@@ -50,8 +49,6 @@ public class Floor extends MapElement {
     public void render(SpriteBatch batch) {
         batch.draw(floorTexture, x * 32, y * 32, 32, 32);
     }
-
-
 
     /**
      * Disposes of the texture to free resources.

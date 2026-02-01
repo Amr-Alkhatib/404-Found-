@@ -14,22 +14,18 @@ public class MorphTrap extends Obstacle {
     private float stateTime;
     private boolean affectingPlayer = false;
 
-    // 👇 自己管理 active 状态
     private boolean active = true;
 
     public MorphTrap(float x, float y) {
         super(x, y);
-        // 不再调用 setActive(true)，因为父类没有
         loadTexturesAndAnimations();
         this.stateTime = 0f;
     }
 
-    // 👇 提供自己的 isActive()
     public boolean isActive() {
         return active;
     }
 
-    // 如果需要，也可以提供 setActive
     public void setActive(boolean active) {
         this.active = active;
     }

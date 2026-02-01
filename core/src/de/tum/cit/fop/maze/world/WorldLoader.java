@@ -29,9 +29,6 @@ public class WorldLoader {
         }
 
         List<String> lines = readLines(file);
-        // Flip Y: file top = high y in game? Or treat file row 0 as y=0?
-        // We'll assume: first line = y = 0 (bottom), last line = y = height-1 (top)
-        // But many games do opposite. Let's use: line index = y, column index = x.
 
         int height = lines.size();
         if (height == 0) throw new RuntimeException("Empty map file");
@@ -60,7 +57,7 @@ public class WorldLoader {
                         obstacles.add(new Trap(x, y));
                         break;
                     case 6:
-                        obstacles.add(new MorphTrap(x, y)); // ← Your new trap!
+                        obstacles.add(new MorphTrap(x, y));
                         break;
                     case 2:
                         if (playerStartX != -1) {
@@ -70,7 +67,6 @@ public class WorldLoader {
                         playerStartY = y;
                         break;
                     case 0:
-                        // empty
                         break;
                     default:
                         System.out.println("Warning: Unknown tile type " + tileType + " at (" + x + "," + y + ")");

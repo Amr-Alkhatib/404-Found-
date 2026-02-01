@@ -18,7 +18,6 @@ public abstract class Obstacle extends MapElement {
         active = true;
     }
 
-
     /**
      * The active status of the obstacle, meaning whether the player can interact with it.
      */
@@ -51,6 +50,5 @@ public abstract class Obstacle extends MapElement {
     public abstract void render(SpriteBatch batch);
 
     public void update(float delta) {
-
     }
 }

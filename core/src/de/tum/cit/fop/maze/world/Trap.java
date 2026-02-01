@@ -81,8 +81,6 @@ public class Trap extends Obstacle {
         batch.draw(currentFrame, x * 32, y * 32, 32, 32);
     }
 
-
-
     /**
      * Disposes of the texture to free resources.
      */

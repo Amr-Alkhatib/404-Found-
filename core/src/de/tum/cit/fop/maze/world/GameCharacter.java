@@ -11,19 +11,16 @@ import java.util.List;
 
 /** * A class representing the player's character with a certain position on the game map. */
 public final class GameCharacter extends MapElement {
-    // 在 GameCharacter.java 中
+
     private int upKey;
     private int downKey;
     private int leftKey;
     private int rightKey;
 
-    // ✅ 修复：添加 maxHearts 字段
     private int maxHearts = Constants.characterMaxBooks;
 
-    // ✅ 修复：确保 heartsCollected 正确初始化
     private int heartsCollected = Constants.characterInitialBooks;
 
-    // 确保构造函数中正确初始化（已在之前修复，此处确认）
     public GameCharacter(float initialX, float initialY, int upKey, int downKey, int leftKey, int rightKey) {
         super(initialX, initialY);
         this.upKey = upKey;
@@ -31,16 +28,12 @@ public final class GameCharacter extends MapElement {
         this.leftKey = leftKey;
         this.rightKey = rightKey;
 
-        // ✅ 确保生命值正确初始化
-        // 应为 3
-        // 应为 3
 
         loadTexturesAndAnimations();
         super.currentMovementDirection = Direction.RIGHT;
         defaultFrame = idleRight;
     }
 
-    // 确保方法存在
 
     public GameCharacter(int upKey, int downKey, int leftKey, int rightKey) {
         this(1.0f, 1.0f, upKey, downKey, leftKey, rightKey);
@@ -81,11 +74,8 @@ public final class GameCharacter extends MapElement {
             baseSpeed *= Constants.characterRunningBoost;
         }
 
-        // Hier werden jetzt BEIDE Multiplier verrechnet:
-        // 1. speedMultiplier (für Fallen/Traps aus dem GameManager)
-        // 2. skillMultiplier (für deinen Skill Tree)
         baseSpeed *= speedMultiplier;
-        baseSpeed *= skillMultiplier; // ✅ NEU DAZU
+        baseSpeed *= skillMultiplier;
 
         return baseSpeed * delta;
     }
@@ -99,7 +89,7 @@ public final class GameCharacter extends MapElement {
     }
 
     public void applySpeedBoost() {
-        this.skillMultiplier = 1.2f; // Setzt den Speed dauerhaft auf 120%
+        this.skillMultiplier = 1.2f;
     }
 
     public void boostWalking() {

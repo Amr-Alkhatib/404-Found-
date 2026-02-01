@@ -19,45 +19,37 @@ import java.util.List;
  * Displays time (top-left) and resources (top-right).
  */
 public class Hud {
-
-    // Core References
     private final GameMap gameMap;
     private final Stage stage;
 
-    // Tables
-    private Table topLeftTable;   // Reserved for timer (added by GameManager)
-    private Table topRightTable;  // Key / Boost / Hearts
+    private Table topLeftTable;
+    private Table topRightTable;
 
-    // UI Elements
     private Image keyImage;
     private Image boostImage;
     private final List<Image> bookImages = new ArrayList<>();
 
-    // Drawables
+
     private final TextureRegionDrawable keyNormalDrawable;
     private final TextureRegionDrawable keyGreyedDrawable;
     private final TextureRegionDrawable bookFilledDrawable;
     private final TextureRegionDrawable bookEmptyDrawable;
     private final TextureRegionDrawable boostDrawable;
 
-    // NEW: Helper method to create a simple error texture (red square)
     private static TextureRegionDrawable createErrorDrawable(String name) {
         Pixmap pixmap = new Pixmap(16, 16, Pixmap.Format.RGBA8888);
         pixmap.setColor(Color.RED);
         pixmap.fill();
         Texture texture = new Texture(pixmap);
-        pixmap.dispose(); // Free memory
+        pixmap.dispose();
         System.err.println("ERROR: Failed to load texture for '" + name + "', using red error texture instead.");
         return new TextureRegionDrawable(new TextureRegion(texture));
     }
 
-    // Constructor
     public Hud(GameMap gameMap, Viewport viewport) {
         this.gameMap = gameMap;
         this.stage = new Stage(viewport);
 
-        // NEW: Load textures and check for null, assign drawables
-        // Key textures
         TextureRegion keyNormalTexture = Key.getKeyTexture();
         if (keyNormalTexture == null) {
             keyNormalDrawable = createErrorDrawable("Key Normal");
@@ -72,7 +64,6 @@ public class Hud {
             keyGreyedDrawable = new TextureRegionDrawable(keyGreyedTexture);
         }
 
-        // Heart textures
         TextureRegion bookFilledTexture = Heart.getStaticHeartTexture();
         if (bookFilledTexture == null) {
             bookFilledDrawable = createErrorDrawable("Heart Filled");
@@ -87,7 +78,6 @@ public class Hud {
             bookEmptyDrawable = new TextureRegionDrawable(bookEmptyTexture);
         }
 
-        // Boost texture
         TextureRegion boostTexture = Boost.getBoostTexture();
         if (boostTexture == null) {
             boostDrawable = createErrorDrawable("Boost");
@@ -98,76 +88,61 @@ public class Hud {
         setUpHud();
     }
 
-    // Setup HUD layout
     private void setUpHud() {
-        // ===== Top Left: Timer placeholder =====
         topLeftTable = new Table();
         topLeftTable.top().left();
         topLeftTable.setFillParent(true);
         topLeftTable.pad(20);
         stage.addActor(topLeftTable);
 
-        // ===== Top Right: Status icons =====
         topRightTable = new Table();
         topRightTable.top().right();
         topRightTable.setFillParent(true);
-        topRightTable.pad(40); // Overall padding from screen edge
+        topRightTable.pad(40);
         stage.addActor(topRightTable);
 
-        // Key icon - Initialize with greyed drawable
-        keyImage = new Image(keyGreyedDrawable); // Now guaranteed to be non-null
+        keyImage = new Image(keyGreyedDrawable);
         keyImage.setScale(4);
-        topRightTable.add(keyImage).padRight(60); // Push hearts farther right
+        topRightTable.add(keyImage).padRight(60);
 
-        // Boost icon - Initialize with boost drawable and hide it initially
-        boostImage = new Image(boostDrawable); // Now guaranteed to be non-null
+        boostImage = new Image(boostDrawable);
         boostImage.setScale(4);
-        boostImage.setVisible(false); // NEW: Hide boost icon initially
-        topRightTable.add(boostImage).padRight(50); // Extra space before hearts
+        boostImage.setVisible(false);
+        topRightTable.add(boostImage).padRight(50);
 
-        // Hearts (Books) — spaced out
         int initialBooks = gameMap.getPlayer().getHeartsCollected();
         for (int i = 0; i < Constants.characterMaxBooks; i++) {
             boolean filled = (i < initialBooks);
-            // Use the correct drawable based on loading result
             Image bookImage = new Image(filled ? bookFilledDrawable : bookEmptyDrawable);
             bookImage.setScale(4);
             bookImages.add(bookImage);
 
             if (i == Constants.characterMaxBooks - 1) {
-                // Last heart: no right padding
                 topRightTable.add(bookImage).padLeft(15);
             } else {
-                // Others: add spacing between hearts
                 topRightTable.add(bookImage).padLeft(15).padRight(15);
             }
         }
     }
 
-    // Update HUD based on game state
     public void update() {
-        // Boost visibility - Use setVisible instead of setting Drawable to null (CORRECTED)
         boostImage.setVisible(gameMap.getPlayer().isBoosted());
 
-        // Key visibility - Iterate through keys safely
         boolean hasKey = false;
-        List<Key> keys = gameMap.getKeys(); // Get the list once
-        if (keys != null) { // Check if list is not null
+        List<Key> keys = gameMap.getKeys();
+        if (keys != null) {
             for (Key key : keys) {
-                if (key != null && key.isCollected()) { // Check if key object is not null
+                if (key != null && key.isCollected()) {
                     hasKey = true;
                     break;
                 }
             }
         }
-        // Set the appropriate drawable based on whether a key was found
         keyImage.setDrawable(hasKey ? keyNormalDrawable : keyGreyedDrawable);
 
-        // Hearts (Books) - Update based on collected count
         int booksCollected = gameMap.getPlayer().getHeartsCollected();
         for (int i = 0; i < bookImages.size(); i++) {
             Image bookImage = bookImages.get(i);
-            // Ensure we don't access beyond the initial size if characterMaxBooks changed unexpectedly
             if (i < Constants.characterMaxBooks) {
                 bookImage.setDrawable(
                         i < booksCollected ? bookFilledDrawable : bookEmptyDrawable
@@ -176,7 +151,6 @@ public class Hud {
         }
     }
 
-    // Animate key collection
     public void animateKeyCollection() {
         keyImage.clearActions();
         keyImage.setScale(4);
@@ -186,12 +160,11 @@ public class Hud {
         ));
     }
 
-    // Accessors
     public Stage getStage() {
         return stage;
     }
 
     public void draw() {
-        stage.draw(); // This should now be safe if all drawables are initialized
+        stage.draw();
     }
 }

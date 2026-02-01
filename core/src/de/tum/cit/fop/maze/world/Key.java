@@ -21,7 +21,6 @@ public class Key extends MapElement {
         loadTextures();
     }
 
-
     /**
      * Texture for regular key.
      */
@@ -98,8 +97,6 @@ public class Key extends MapElement {
             batch.draw(normalTexture, x * 32, y * 32, 32, 32);
         }
     }
-
-
 
     /**
      * Disposes of the textures.

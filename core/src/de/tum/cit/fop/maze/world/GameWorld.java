@@ -42,10 +42,8 @@ public class GameWorld {
         for (Obstacle obs : obstacles) {
             obs.dispose();
         }
-        // Wall usually doesn't need dispose if using shared texture
     }
 
-    // Getters
     public Array<Wall> getWalls() { return walls; }
     public List<Obstacle> getObstacles() { return obstacles; }
     public float getPlayerStartX() { return playerStartX; }

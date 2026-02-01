@@ -22,7 +22,6 @@ public class ExitArrow {
         rotation = 0;
     }
 
-
     /**
      * The sprite to be rendered.
      */
@@ -53,7 +52,6 @@ public class ExitArrow {
 
         sprite.setRotation((float) rotation);
     }
-
 
     /**
      * Loads the sprite to be rendered.

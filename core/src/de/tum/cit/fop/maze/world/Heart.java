@@ -123,8 +123,6 @@ public class Heart extends MapElement {
      */
     @Override
     public void dispose() {
-        // Do NOT dispose here per instance — dispose only once globally
-        // Typically handled by GameMap or AssetManager
     }
 
     /**
@@ -132,8 +130,6 @@ public class Heart extends MapElement {
      */
     @Override
     public void render(SpriteBatch batch) {
-        // This method doesn't have 'delta', so it's not suitable for animation.
-        // Keep logic in render(batch, delta) instead.
     }
 
     /**
