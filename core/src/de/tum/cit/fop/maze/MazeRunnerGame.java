@@ -70,6 +70,17 @@ public class MazeRunnerGame extends Game {
 
         loadInfiniteModeScores();
         goToMenu();
+
+        var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
+        // Wir schauen nach, ob "fullscreen" true ist (Standard ist false)
+        boolean isFullscreen = prefs.getBoolean("fullscreen", false);
+
+        if (isFullscreen) {
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+        } else {
+            // Optional: Sicherstellen, dass wir im Fenstermodus starten (z.B. 1280x720 oder deine Standardgröße)
+            Gdx.graphics.setWindowedMode(1280, 720);
+        }
     }
 
     public void addInfiniteModeScore(int score) {
