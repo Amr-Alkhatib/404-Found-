@@ -76,9 +76,9 @@ public class AcknowledgmentScreen implements Screen {
                 "Maze Runner\n\n" +
                         "Team: 404 Found!\n\n" +
                         "Developed by:\n" +
-                        "Huaijing Hou, Amr Alkhatib\n\n" +
+                        "Huaijing Hou, Amr Alkhatib, Samuel Deißinger\n\n" +
                         "Graphics:\n" +
-                        "Samuel\n\n" +
+                        "Samuel Deißinger\n\n" +
                         "Music:\n" +
                         "Free Music Archive (https://pixabay.com/)\n\n" +
                         "Patch & Debugging:\n" +
