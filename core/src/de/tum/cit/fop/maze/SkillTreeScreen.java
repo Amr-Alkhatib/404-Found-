@@ -21,7 +21,7 @@ public class SkillTreeScreen implements Screen {
 
     public SkillTreeScreen(MazeRunnerGame game) {
         this.game = game;
-        this.skillTree = new SkillTree(); // Lädt aktuellen Stand
+        this.skillTree = new SkillTree();
         this.stage = new Stage(new ScreenViewport(), game.getSpriteBatch());
     }
 
@@ -32,22 +32,21 @@ public class SkillTreeScreen implements Screen {
     }
 
     private void setupUI() {
-        stage.clear(); // Reset UI bei jedem Öffnen
+        stage.clear();
         Table table = new Table();
         table.setFillParent(true);
         stage.addActor(table);
 
-        // Titel
         table.add(new Label("SKILL TREE", game.getSkin(), "title")).padBottom(20).row();
 
-        // Score Anzeige
+
         int currentScore = SaveSystem.loadTotalScore();
         scoreLabel = new Label("Points available: " + currentScore, game.getSkin());
         table.add(scoreLabel).padBottom(40).row();
 
-        // --- SPEED BUTTON ---
+
         TextButton speedBtn = new TextButton("", game.getSkin());
-        // Sofort prüfen: Ist es schon gekauft? Farbe setzen!
+
         updateButtonVisuals(speedBtn, skillTree.hasSpeed(), "Speed Boost", 1500);
 
         speedBtn.addListener(new ChangeListener() {
@@ -55,13 +54,12 @@ public class SkillTreeScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 if (skillTree.unlockSpeed()) {
                     updateButtonVisuals(speedBtn, true, "Speed Boost", 1500);
-                    updateScoreLabel(); // Score oben aktualisieren
+                    updateScoreLabel();
                 }
             }
         });
         table.add(speedBtn).width(400).pad(10).row();
 
-        // --- HEART BUTTON ---
         TextButton heartBtn = new TextButton("", game.getSkin());
         updateButtonVisuals(heartBtn, skillTree.hasHeart(), "Extra Heart", 3000);
 
@@ -76,7 +74,6 @@ public class SkillTreeScreen implements Screen {
         });
         table.add(heartBtn).width(400).pad(10).row();
 
-        // --- GREED BUTTON ---
         TextButton greedBtn = new TextButton("", game.getSkin());
         updateButtonVisuals(greedBtn, skillTree.hasGreed(), "Greed (Score x1.5)", 5000);
 
@@ -91,7 +88,6 @@ public class SkillTreeScreen implements Screen {
         });
         table.add(greedBtn).width(400).pad(10).row();
 
-        // --- BACK BUTTON ---
         TextButton backBtn = new TextButton("Back to Menu", game.getSkin());
         backBtn.addListener(new ChangeListener() {
             @Override
@@ -102,28 +98,20 @@ public class SkillTreeScreen implements Screen {
         table.add(backBtn).padTop(50).width(300).row();
     }
 
-    /**
-     * Diese Methode kümmert sich um Farben und Text:
-     * - Grün/Active: Wenn schon gekauft.
-     * - Rot: Wenn zu teuer.
-     * - Weiß: Wenn kaufbar.
-     */
     private void updateButtonVisuals(TextButton btn, boolean isUnlocked, String skillName, int cost) {
         if (isUnlocked) {
             btn.setText(skillName + " [ACTIVE]");
             btn.getLabel().setColor(Color.GREEN);
-            btn.setDisabled(true); // Knopf deaktivieren, da schon gekauft
+            btn.setDisabled(true);
         } else {
             btn.setText("Buy " + skillName + " (" + cost + " Pts)");
 
             int currentScore = SaveSystem.loadTotalScore();
             if (currentScore >= cost) {
-                btn.getLabel().setColor(Color.WHITE); // Genug Geld -> Weiß
+                btn.getLabel().setColor(Color.WHITE);
                 btn.setDisabled(false);
             } else {
-                btn.getLabel().setColor(Color.RED);   // Zu arm -> Rot
-                // Wir lassen ihn aktiv, damit man klicken kann (passiert aber nichts, außer "Fail")
-                // oder du kannst btn.setDisabled(true) machen, wenn man gar nicht klicken können soll.
+                btn.getLabel().setColor(Color.RED);
                 btn.setDisabled(false);
             }
         }

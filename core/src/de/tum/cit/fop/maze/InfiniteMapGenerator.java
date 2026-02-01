@@ -13,24 +13,17 @@ public class InfiniteMapGenerator {
     private static final Random random = new Random();
     private static final String MAPS_DIR = "maps/";
 
-    // NEW: Add a simple lock flag to prevent immediate consecutive calls
     private static boolean isGenerating = false;
 
-    // NEW: Define constants for probability and cell types
-    // NEW: Define wall probability for internal areas
-    // A lower probability means fewer walls, more potential open space.
-    // Needs tuning to balance maze structure and path availability.
     private static final double WALL_PROBABILITY = 0.28; // Adjusted probability
 
-    // Values for different map entities
-    private static final int CELL_WALL = 0; // Value for walls (this becomes 'null' in output)
-    private static final int CELL_START = 1; // Value for Start
-    private static final int CELL_EXIT = 2; // Value for Exit
-    private static final int CELL_TRAP = 4; // Value for Trap
-    private static final int CELL_ENEMY = 5; // Value for Enemy
-    private static final int CELL_MORPH_TRAP = 6; // Value for Morph Trap
+    private static final int CELL_WALL = 0;
+    private static final int CELL_START = 1;
+    private static final int CELL_EXIT = 2;
+    private static final int CELL_TRAP = 4;
+    private static final int CELL_ENEMY = 5;
+    private static final int CELL_MORPH_TRAP = 6;
 
-    // Internal value for passable ground (will not be written to file)
     private static final int CELL_GROUND_INTERNAL = -1;
 
     /**
@@ -51,15 +44,14 @@ public class InfiniteMapGenerator {
      * @return The path to the file containing the map string, or null on error.
      */
     public static String generateInfiniteMap(int width, int height, int numExtraTraps, int numEnemies, int numMorphTraps) {
-        // NEW: Check the lock flag
         if (isGenerating) {
             System.err.println("WARNING: generateInfiniteMap called while another generation is in progress. Skipping.");
-            return null; // Or handle differently as needed
-        }
-        isGenerating = true; // Set the lock
+            return null;
+
+        isGenerating = true;
         System.out.println("DEBUG: generateInfiniteMap called with width=" + width + ", height=" + height);
 
-        try { // Wrap main logic in try-finally to ensure lock is released
+        try {
             Path mapsDirPath = Paths.get(MAPS_DIR);
             try {
                 Files.createDirectories(mapsDirPath);
@@ -69,8 +61,6 @@ public class InfiniteMapGenerator {
                 return null;
             }
 
-            // NEW: Use a 2D array to build the map internally for easier manipulation
-            // Initialize the entire grid with CELL_GROUND_INTERNAL (-1) (representing passable ground internally)
             int[][] mapGrid = new int[width][height];
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {

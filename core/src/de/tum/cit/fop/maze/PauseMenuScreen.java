@@ -45,7 +45,6 @@ public class PauseMenuScreen implements Screen {
      * Sets up the pause menu UI.
      */
     private void setUpMenu() {
-        // Musik laden
         pauseMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/pause.mp3"));
         pauseMusic.setLooping(true);
 
@@ -56,7 +55,6 @@ public class PauseMenuScreen implements Screen {
         game.setCurrentBackgroundMusic(pauseMusic);
         pauseMusic.play();
 
-        // UI Aufbauen
         Table table = new Table();
         table.setFillParent(true);
         table.center();
@@ -68,13 +66,10 @@ public class PauseMenuScreen implements Screen {
         Label titleLabel = new Label("Pause Menu", game.getSkin(), "title");
         table.add(titleLabel).padBottom(80).row();
 
-        // --- BUTTONS ---
-
         TextButton continueButton = new TextButton("Continue", game.getSkin());
         continueButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Hier geht es zurück ins Spiel!
                 pauseMusic.dispose();
                 game.setScreen(gameScreen);
                 gameScreen.resume();
@@ -125,7 +120,6 @@ public class PauseMenuScreen implements Screen {
 
     @Override
     public void show() {
-        // WICHTIG: Input auf Stage setzen, damit Buttons klickbar sind
         Gdx.input.setInputProcessor(stage);
 
         if (!pauseMusic.isPlaying()) {
@@ -137,12 +131,9 @@ public class PauseMenuScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // UI berechnen und zeichnen
         stage.act(delta);
         stage.draw();
 
-        // HIER IST JETZT KEINE ESC-ABFRAGE MEHR!
-        // Das Menü bleibt stabil offen, bis du "Continue" klickst.
     }
 
     @Override

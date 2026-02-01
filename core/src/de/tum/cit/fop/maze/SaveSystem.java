@@ -12,31 +12,25 @@ public class SaveSystem {
     private static final String PREF_NAME_SCORES = "InfiniteModeScores";
     private static final String PREF_NAME_GLOBAL = "MazeRunnerPrefs";
 
-    // ============================================================
-    // 1. DER PERFEKTE SNAPSHOT (Mit Positionen für ALLES + Score)
-    // ============================================================
-
     public static void saveGame(int hearts, float x, float y, String levelPath,
                                 float timePlayed,
-                                String keyData,       // Geändert: Speichert jetzt Positionen + Status
-                                String enemyData,     // Speichert Positionen + Status
-                                String heartData,     // Geändert: Positionen + Status
-                                String boostData,     // Geändert: Positionen + Status
-                                String trapData,      // Geändert: Positionen + Status
-                                String morphTrapData, // NEU: MorphTraps
-                                int totalHearts,      // NEU: Score
-                                int totalEnemies) {   // NEU: Score
+                                String keyData,
+                                String enemyData,
+                                String heartData,
+                                String boostData,
+                                String trapData,
+                                String morphTrapData,
+                                int totalHearts,
+                                int totalEnemies) {
 
         Preferences prefs = Gdx.app.getPreferences(PREF_NAME_GAME);
 
-        // Basis-Daten
         prefs.putInteger("hearts", hearts);
         prefs.putFloat("playerX", x);
         prefs.putFloat("playerY", y);
         prefs.putString("currentLevel", levelPath);
         prefs.putFloat("timePlayed", timePlayed);
 
-        // Objekt-Daten (Positionen & Status)
         prefs.putString("keyData", keyData);
         prefs.putString("enemyData", enemyData);
         prefs.putString("heartData", heartData);
@@ -44,7 +38,6 @@ public class SaveSystem {
         prefs.putString("trapData", trapData);
         prefs.putString("morphTrapData", morphTrapData);
 
-        // Score-Daten
         prefs.putInteger("savedTotalHearts", totalHearts);
         prefs.putInteger("savedTotalEnemies", totalEnemies);
 
@@ -64,10 +57,6 @@ public class SaveSystem {
         getGameSave().clear();
         getGameSave().flush();
     }
-
-    // ============================================================
-    // 2. GLOBAL SCORE & INFINITE MODE (Bleibt unverändert)
-    // ============================================================
 
     public static void saveTotalScore(int score) {
         Gdx.app.getPreferences(PREF_NAME_GLOBAL).putInteger("total_score", score).flush();
@@ -102,8 +91,6 @@ public class SaveSystem {
         return scores;
     }
 
-    // In SaveSystem.java
-
     public static void saveSkills(boolean speed, boolean heart, boolean greed) {
         Preferences prefs = Gdx.app.getPreferences("MazeRunnerSkills");
         prefs.putBoolean("skill_speed", speed);
@@ -129,7 +116,6 @@ public class SaveSystem {
         return Gdx.app.getPreferences("MazeRunnerAchievements").getBoolean(id, false);
     }
 
-    // Speichert die Anzahl der gesammelten Herzen (Global)
     public static void addGlobalHearts(int amount) {
         Preferences prefs = Gdx.app.getPreferences("MazeRunnerStats");
         int current = prefs.getInteger("total_hearts_collected", 0);

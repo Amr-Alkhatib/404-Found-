@@ -33,7 +33,6 @@ public class MenuScreen implements Screen {
         Viewport viewport = new ScreenViewport(camera);
         stage = new Stage(viewport, game.getSpriteBatch());
 
-        // Musik Setup
         menuMusic = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/background.mp3"));
         menuMusic.setLooping(true);
         var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
@@ -46,7 +45,6 @@ public class MenuScreen implements Screen {
     }
 
     private void setupUI() {
-        // --- BUTTON STYLES ---
         Texture buttonNormalTex = new Texture(Gdx.files.internal("assets/images/image_17.png"));
         Texture buttonHoverTex = new Texture(Gdx.files.internal("assets/images/image_18.png"));
         Texture buttonPressedTex = new Texture(Gdx.files.internal("assets/images/image_19.png"));
@@ -63,41 +61,30 @@ public class MenuScreen implements Screen {
         float btnHeight = 75;
         float btnPad = 10;
 
-        // -----------------------------------------------------------
-        // 1. BACKGROUND
-        // -----------------------------------------------------------
         Image backgroundImage = new Image(new Texture(Gdx.files.internal("assets/images/2.png")));
         backgroundImage.setFillParent(true);
         stage.addActor(backgroundImage);
 
-        // -----------------------------------------------------------
-        // 2. ECKE OBEN LINKS (Punkte)
-        // -----------------------------------------------------------
         Table pointsTable = new Table();
         pointsTable.setFillParent(true);
         pointsTable.top().left().pad(20);
 
         int totalScore = SaveSystem.loadTotalScore();
-        // Normale Schriftart, kein Title-Style
         Label scoreLabel = new Label("Points: " + totalScore, game.getSkin());
         scoreLabel.setFontScale(1.2f);
         pointsTable.add(scoreLabel);
 
         stage.addActor(pointsTable);
 
-        // -----------------------------------------------------------
-        // 3. MAIN TABLE (Titel & Zentrale Buttons)
-        // -----------------------------------------------------------
+
         Table mainTable = new Table();
         mainTable.setFillParent(true);
         mainTable.center();
 
-        // Buttons global hochschieben
         mainTable.padBottom(150);
 
         stage.addActor(mainTable);
 
-        // -- TITEL ANIMATION --
         float scaleFactor = 4.0f;
         Texture titleTexture = new Texture(Gdx.files.internal("assets/images/headline_menu.png"));
         Texture dotTexture = new Texture(Gdx.files.internal("assets/images/line_red_head_left.png"));
@@ -124,25 +111,18 @@ public class MenuScreen implements Screen {
         titleGroup.addActor(titleImage);
         titleGroup.addActor(dotImage);
 
-        // TITEL POSITIONIERUNG
-        // padTop(120): Drückt Titel runter
-        // padBottom(30): Schafft Platz zwischen Titel und erstem Button
         mainTable.add(titleGroup).padTop(120).padBottom(30).row();
 
-        // -- ZENTRALE BUTTONS --
-
-        // 1. START GAME (Führt zur Level-Auswahl)
         TextButton startGameButton = new TextButton("Start Game", customButtonStyle);
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 SaveSystem.clearSave();
-                game.goToMap(false); // Öffnet Level-Auswahl
+                game.goToMap(false);
             }
         });
         mainTable.add(startGameButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 2. Load Game
         TextButton loadGameButton = new TextButton("Load Game", customButtonStyle);
         loadGameButton.addListener(new ChangeListener() {
             @Override
@@ -157,9 +137,6 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(loadGameButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // (Select Section Button wurde entfernt, da jetzt in Start Game integriert)
-
-        // 3. Settings
         TextButton settingsButton = new TextButton("Settings", customButtonStyle);
         settingsButton.addListener(new ChangeListener() {
             @Override
@@ -169,7 +146,6 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(settingsButton).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 4. Acknowledgments
         TextButton credits = new TextButton("Acknowledgments", customButtonStyle);
         credits.addListener(new ChangeListener() {
             @Override
@@ -179,7 +155,6 @@ public class MenuScreen implements Screen {
         });
         mainTable.add(credits).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
-        // 5. Quit
         TextButton quit = new TextButton("Quit", customButtonStyle);
         quit.addListener(new ChangeListener() {
             @Override
@@ -190,9 +165,6 @@ public class MenuScreen implements Screen {
         mainTable.add(quit).width(btnWidth).height(btnHeight).padBottom(btnPad).row();
 
 
-        // -----------------------------------------------------------
-        // 4. ECKE UNTEN LINKS (Skill Tree & Achievements)
-        // -----------------------------------------------------------
         Table leftTable = new Table();
         leftTable.setFillParent(true);
         leftTable.bottom().left().pad(20);
@@ -217,10 +189,6 @@ public class MenuScreen implements Screen {
 
         stage.addActor(leftTable);
 
-
-        // -----------------------------------------------------------
-        // 5. ECKE UNTEN RECHTS (High Scores & Infinite Mode)
-        // -----------------------------------------------------------
         Table rightTable = new Table();
         rightTable.setFillParent(true);
         rightTable.bottom().right().pad(20);

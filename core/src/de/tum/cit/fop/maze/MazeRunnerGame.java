@@ -40,7 +40,6 @@ public class MazeRunnerGame extends Game {
     private boolean isInfiniteMode = false;
     private int currentInfiniteLevel = 0;
 
-    // 🟢 NEU: Counter für Infinite Mode Achievements
     private int infiniteLevelCounter = 1;
 
     private int totalScore = 0;
@@ -72,13 +71,11 @@ public class MazeRunnerGame extends Game {
         goToMenu();
 
         var prefs = Gdx.app.getPreferences("MazeRunnerPrefs");
-        // Wir schauen nach, ob "fullscreen" true ist (Standard ist false)
         boolean isFullscreen = prefs.getBoolean("fullscreen", false);
 
         if (isFullscreen) {
             Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
         } else {
-            // Optional: Sicherstellen, dass wir im Fenstermodus starten (z.B. 1280x720 oder deine Standardgröße)
             Gdx.graphics.setWindowedMode(1280, 720);
         }
     }
@@ -119,52 +116,36 @@ public class MazeRunnerGame extends Game {
         goToGame(mapLevel, false);
     }
 
-    /**
-     * Hauptmethode zum Starten eines Spiels.
-     */
     public void goToGame(String mapLevel, boolean loadSave) {
-        // 1. Alten Screen aufräumen
         if (gameScreen != null) {
             gameScreen.dispose();
         }
 
-        // 🟢 NEU: Infinite Mode Check & Reset
         if (mapLevel.equals("INFINITE_MODE")) {
             this.isInfiniteMode = true;
-            this.infiniteLevelCounter = 1; // Start bei Level 1
+            this.infiniteLevelCounter = 1;
         } else {
             this.isInfiniteMode = false;
         }
 
-        // 2. WICHTIG: In die Variable 'gameScreen' speichern!
         this.gameScreen = new GameScreen(this, mapLevel, loadSave);
 
-        // 3. Musik-Referenz aktualisieren
         this.currentBackgroundMusic = gameScreen.getBackgroundMusic();
 
-        // 4. Screen setzen
         setScreen(gameScreen);
 
-        // 5. Andere Screens schließen
         cleanupOtherScreens();
     }
 
-    /**
-     * Infinite Mode Weiterleitung (nur wenn Infinite Mode aktiv)
-     * Hier war vorher der Fehler mit "continueInfiniteMode" vs "goToNextInfiniteLevel".
-     * Diese Methode hier ist jetzt die "Weiterleitungs-Logik".
-     */
     public void continueInfiniteMode() {
         goToNextInfiniteLevel(); // Ruft deine bestehende Logik auf
     }
 
     public void goToNextInfiniteLevel() {
         if (gameScreen != null) {
-            // 🟢 NEU: Level hochzählen & Achievement prüfen
             infiniteLevelCounter++;
             new AchievementManager().onInfiniteLevelReached(infiniteLevelCounter);
 
-            // Direkt in der existierenden GameScreen Instanz neu laden
             String newMapFile = InfiniteMapGenerator.generateInfiniteMap(20, 20, 5, 3, 2);
             if (newMapFile != null) {
                 gameScreen.reloadFromNewMap(newMapFile);
@@ -248,8 +229,6 @@ public class MazeRunnerGame extends Game {
             currentBackgroundMusic.dispose();
         }
     }
-
-    // --- GETTER & SETTER ---
 
     public SpriteBatch getSpriteBatch() {
         return spriteBatch;

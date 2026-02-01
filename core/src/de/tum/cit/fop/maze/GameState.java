@@ -10,50 +10,43 @@ import java.util.List;
 public class GameState implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    // Player state
     public float playerX, playerY;
     public int currentHearts;
 
-    // Collected items state
+
     public List<Float> collectedKeyPositionsX;
     public List<Float> collectedKeyPositionsY;
 
     public int totalHeartsCollected;
     public int totalEnemiesKilled;
-    // Exit state
+
     public List<Float> exitPositionsX;
     public List<Float> exitPositionsY;
     public List<Boolean> exitLockStatuses;
 
-    // Enemy state
     public List<Float> enemyPositionsX;
     public List<Float> enemyPositionsY;
     public List<Boolean> enemyActiveStatuses;
 
-    // Trap state
     public List<Float> trapPositionsX;
     public List<Float> trapPositionsY;
     public List<Boolean> trapActiveStatuses;
 
-    // Heart state
     public List<Float> heartPositionsX;
     public List<Float> heartPositionsY;
     public List<Boolean> heartCollectedStatuses;
 
-    // Boost state
     public List<Float> boostPositionsX;
     public List<Float> boostPositionsY;
     public List<Boolean> boostCollectedStatuses;
 
-    // MorphTrap state
     public List<Float> morphTrapPositionsX;
     public List<Float> morphTrapPositionsY;
     public List<Boolean> morphTrapActiveStatuses;
     public List<Boolean> morphTrapAffectingPlayerStatuses;
 
-    // Gameplay state
     public float timePlayed;
-    public String mapFile; // Store the map file name to know which level was loaded
+    public String mapFile;
 
     /**
      * Constructor to initialize the GameState with specific values.

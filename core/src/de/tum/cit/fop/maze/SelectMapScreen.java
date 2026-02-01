@@ -108,9 +108,6 @@ public class SelectMapScreen implements Screen {
         return new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                // Ganz einfach: Wenn man auf den Button klickt, startet das Level.
-                // false = Wir starten frisch (nicht laden).
-                // Wer laden will, benutzt den "Load Game" Button im Hauptmenü.
                 game.goToGame(mapFile, false);
             }
         };

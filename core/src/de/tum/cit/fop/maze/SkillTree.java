@@ -10,7 +10,6 @@ public class SkillTree {
     private boolean greedUnlocked;
 
     public SkillTree() {
-        // Beim Starten laden wir, was wir schon haben
         this.speedUnlocked = SaveSystem.isSkillUnlocked("speed");
         this.heartUnlocked = SaveSystem.isSkillUnlocked("heart");
         this.greedUnlocked = SaveSystem.isSkillUnlocked("greed");
@@ -22,8 +21,8 @@ public class SkillTree {
         if (currentScore >= cost && !speedUnlocked) {
             SaveSystem.saveTotalScore(currentScore - cost); // Bezahlen
             speedUnlocked = true;
-            save(); // Speichern
-            return true; // Kauf erfolgreich
+            save();
+            return true;
         }
         return false;
     }
@@ -56,12 +55,10 @@ public class SkillTree {
         SaveSystem.saveSkills(speedUnlocked, heartUnlocked, greedUnlocked);
     }
 
-    // Getter für das Spiel
     public boolean hasSpeed() { return speedUnlocked; }
     public boolean hasHeart() { return heartUnlocked; }
     public boolean hasGreed() { return greedUnlocked; }
 
-    // Hilfsmethode für den Multiplier
     public float getScoreMultiplier() {
         return greedUnlocked ? 1.5f : 1.0f;
     }

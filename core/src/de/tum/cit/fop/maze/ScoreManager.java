@@ -34,7 +34,6 @@ public class ScoreManager {
         return highScore;
     }
 
-    /** 🔴 核心：只在 Game Over / Run End 调一次 */
     public void finalizeScore() {
         frozen = true;
         if (currentScore > highScore) {
