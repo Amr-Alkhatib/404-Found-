@@ -47,7 +47,7 @@ public class InfiniteMapGenerator {
         if (isGenerating) {
             System.err.println("WARNING: generateInfiniteMap called while another generation is in progress. Skipping.");
             return null;
-
+        }
         isGenerating = true;
         System.out.println("DEBUG: generateInfiniteMap called with width=" + width + ", height=" + height);
 
@@ -390,15 +390,4 @@ public class InfiniteMapGenerator {
         }
         return false; // Target not reachable
     }
-
-    // --- PRESERVE ANY EXISTING METHODS HERE ---
-    // If there were other methods in the original InfiniteMapGenerator.java,
-    // they would be included here exactly as they were.
-    // Example placeholder if there was another method:
-    /*
-    public static void someExistingMethod() {
-        // Existing logic here...
-    }
-    */
-    // --- END OF PRESERVED SECTION ---
 }
